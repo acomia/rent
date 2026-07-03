@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { env, supabaseConfigured } from '@/lib/env';
+import { env } from '@/lib/env';
 import { Sentry } from '@/lib/sentry';
 import { supabase } from '@/lib/supabase';
 
@@ -12,7 +12,7 @@ export default function Home() {
   const [supaMsg, setSupaMsg] = useState('');
 
   async function pingSupabase() {
-    if (!supabaseConfigured) {
+    if (!supabase) {
       setSupaCheck('fail');
       setSupaMsg('Not configured — add keys to .env');
       return;

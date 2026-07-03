@@ -12,6 +12,7 @@
       "bundleIdentifier": "com.arnancomia.rent"
     },
     "android": {
+      "package": "com.arnancomia.rent",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
