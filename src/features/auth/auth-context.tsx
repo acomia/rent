@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -44,15 +45,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [devBypass, setDevBypass] = useState(false);
 
   const user = session?.user ?? null;
+  // Guards against a stale fetch (from a previous user/session) committing after
+  // a newer load has started — e.g. sign-out or account switch mid-flight.
+  const customerLoadId = useRef(0);
 
   const loadCustomer = useCallback(async (userId: string | undefined) => {
+    const loadId = ++customerLoadId.current;
     if (!userId) {
       setCustomer(null);
       return;
     }
     try {
-      setCustomer(await fetchCustomer(userId));
+      const next = await fetchCustomer(userId);
+      if (loadId === customerLoadId.current) setCustomer(next);
     } catch (e) {
+      if (loadId !== customerLoadId.current) return;
       // A missing row right after signup is expected (trigger may lag); leave
       // null and let a later refresh pick it up. Report anything unexpected.
       Sentry.captureException(e);
@@ -64,13 +71,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      loadCustomer(data.session?.user.id).finally(() => {
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        setSession(data.session);
+        return loadCustomer(data.session?.user.id);
+      })
+      .catch((e) => {
+        // Cold-start network failure: don't strand the app on the splash.
+        Sentry.captureException(e);
+        if (active) {
+          setSession(null);
+          setCustomer(null);
+        }
+      })
+      .finally(() => {
         if (active) setLoading(false);
       });
-    });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);

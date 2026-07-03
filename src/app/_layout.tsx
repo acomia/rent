@@ -21,9 +21,12 @@ SplashScreen.preventAutoHideAsync();
 
 // Screens a signed-in-but-not-finished user is allowed to stay on inside the
 // (auth) group — otherwise a fresh session would bounce them straight to the app
-// before they verify their phone or read the legal copy.
+// before they finish. `forgot-password` is included because verifyOtp(recovery)
+// creates a temporary session mid-flow; the reset must complete (updateUser +
+// signOut) without being redirected away.
 const SESSION_ALLOWED_AUTH_SCREENS = new Set([
   'verify-otp',
+  'forgot-password',
   'terms',
   'privacy',
 ]);

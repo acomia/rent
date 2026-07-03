@@ -37,13 +37,17 @@ export default function VerifyOtp() {
     defaultValues: { code: '' },
   });
 
-  async function sendCode() {
+  // Initial request starts the phone-change (updateUser); the resend button
+  // re-sends the code for that pending change (resend), which is the correct API.
+  async function requestCode(isResend: boolean) {
     if (!supabase || !phone) {
       setSendError('No phone number on file — go back and sign up again.');
       return;
     }
     setSendError(null);
-    const { error } = await supabase.auth.updateUser({ phone });
+    const { error } = isResend
+      ? await supabase.auth.resend({ type: 'phone_change', phone })
+      : await supabase.auth.updateUser({ phone });
     if (error) {
       setSendError(error.message);
       return;
@@ -55,7 +59,7 @@ export default function VerifyOtp() {
   useEffect(() => {
     if (requested.current) return;
     requested.current = true;
-    sendCode();
+    requestCode(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -123,7 +127,7 @@ export default function VerifyOtp() {
 
       <Pressable
         disabled={cooldown > 0}
-        onPress={sendCode}
+        onPress={() => requestCode(true)}
         className="self-center py-2 active:opacity-70"
       >
         <Text

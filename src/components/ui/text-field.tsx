@@ -12,7 +12,7 @@ type Props = TextInputProps & {
  * inside a React Hook Form `Controller` (pass `value` / `onChangeText` / `onBlur`).
  */
 export const TextField = forwardRef<TextInput, Props>(function TextField(
-  { label, error, hint, ...rest },
+  { label, error, hint, onFocus, onBlur, ...rest },
   ref,
 ) {
   const [focused, setFocused] = useState(false);
@@ -33,15 +33,15 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
         ref={ref}
         placeholderTextColor="#A1A1AA"
         className={`rounded-2xl border ${border} bg-black/[0.04] px-4 py-4 text-base text-ink dark:bg-white/[0.06] dark:text-cream`}
+        {...rest}
         onFocus={(e) => {
           setFocused(true);
-          rest.onFocus?.(e);
+          onFocus?.(e);
         }}
         onBlur={(e) => {
           setFocused(false);
-          rest.onBlur?.(e);
+          onBlur?.(e);
         }}
-        {...rest}
       />
       {error ? (
         <Text className="text-xs text-red-500">{error}</Text>

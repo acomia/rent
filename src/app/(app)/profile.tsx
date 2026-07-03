@@ -43,14 +43,20 @@ function ProfileForm({ customer }: { customer: Customer }) {
       Alert.alert('Check your details', parsed.error.issues[0].message);
       return;
     }
+    const normalizedPhone = normalizePhone(parsed.data.phone);
     setSaving(true);
     try {
       await updateCustomer(customer.id, {
         full_name: parsed.data.fullName,
-        phone_number: normalizePhone(parsed.data.phone),
+        phone_number: normalizedPhone,
         address: parsed.data.address ? parsed.data.address : null,
       });
       await refreshCustomer();
+      // Reflect the persisted/normalized values (the row id is unchanged, so the
+      // key-based remount won't fire — sync local state explicitly).
+      setFullName(parsed.data.fullName);
+      setPhone(normalizedPhone);
+      setAddress(parsed.data.address ?? '');
       Alert.alert('Saved', 'Your profile has been updated.');
     } catch (e) {
       Alert.alert(
