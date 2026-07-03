@@ -35,6 +35,23 @@ Resend/SMS keys) here; those live in Supabase edge-function secrets.
 The app boots without `.env`; the home screen shows connection status so you can
 verify each service once its keys are in.
 
+### Backend setup (Phase 1 — Auth)
+
+Auth needs one-time setup in the Supabase dashboard before signup/login work:
+
+1. **Run the migration** — paste [`src/db/0001_customers.sql`](./src/db/0001_customers.sql)
+   into the SQL editor (or `supabase db push`). Creates the `customers` table,
+   the signup-provisioning trigger, and row-level security.
+2. **Auth → Providers → Email** — turn **off** "Confirm email". Verification in
+   v1 is by phone OTP, so signup must return a session immediately for the OTP
+   step to run.
+3. **Auth → Providers → Phone** — connect an SMS provider (Twilio / MessageBird /
+   Vonage). Until this is set, phone OTP can't send — use the **dev-only "Skip
+   verification"** button on the OTP screen to test the rest of the flow.
+4. **Auth → Emails → Reset password** — the default template includes `{{ .Token }}`,
+   which the recovery-OTP forgot-password flow relies on. No change needed unless
+   you've customized it.
+
 ## Scripts
 
 | Command                     | Does                                   |

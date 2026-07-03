@@ -45,16 +45,16 @@ Goal: tooling and accounts ready, "hello world" running on a real device.
 
 Goal: a real user can sign up, log in, and edit their profile.
 
-- [ ] Confirm KYC add-ons (Open Item #6) — phone OTP is already decided; decide only whether to also require ID upload / tiered deposit
-- [ ] Enable Supabase Auth (email + password, phone OTP)
-- [ ] Build sign-up screen (email, password, name, phone)
-- [ ] Build OTP verification screen
-- [ ] Build login screen + "forgot password" flow
-- [ ] Build session persistence + auth context
-- [ ] Build profile screen (name, contact, email, address)
-- [ ] Add ID upload (if KYC requires it) — Supabase Storage bucket + photo picker
-- [ ] Add Terms & Conditions + Privacy Policy acceptance on signup
-- [ ] Create `customers` table with row-level security policy
+- [x] Confirm KYC add-ons (Open Item #6) — **decided: OTP only** (no ID upload / tiered deposit in v1). `customers` keeps nullable `id_document_url` + `deposit_tier` so B/C bolt on later with no migration.
+- [x] Enable Supabase Auth (email + password, phone OTP) — code done; dashboard config documented in README (disable email confirm, connect SMS provider)
+- [x] Build sign-up screen (email, password, name, phone)
+- [x] Build OTP verification screen (full `updateUser`→`verifyOtp` flow + `__DEV__` skip)
+- [x] Build login screen + "forgot password" flow (recovery-OTP based)
+- [x] Build session persistence + auth context (`AuthProvider` + `onAuthStateChange`, AsyncStorage)
+- [x] Build profile screen (name, contact, email, address) — `@expo/ui` native form
+- [ ] ~~Add ID upload~~ — **deferred**, OTP-only KYC decision (Open Item #6)
+- [x] Add Terms & Conditions + Privacy Policy acceptance on signup (checkbox + atomic timestamp + `terms_version`)
+- [x] Create `customers` table with row-level security policy (`src/db/0001_customers.sql`)
 
 **Done when:** a customer can register, verify, log in across app restarts, and edit their profile.
 
