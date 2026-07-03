@@ -15,9 +15,9 @@ Resend · Sentry.
 ## Getting started
 
 ```bash
-npm install
+pnpm install
 cp .env.example .env   # then fill in your keys (see below)
-npm run ios            # or: npm run android
+pnpm ios               # or: pnpm android
 ```
 
 ### Environment
@@ -37,12 +37,12 @@ verify each service once its keys are in.
 
 ## Scripts
 
-| Command                           | Does                                   |
-| --------------------------------- | -------------------------------------- |
-| `npm run ios` / `npm run android` | Start Metro + open on simulator/device |
-| `npm run lint`                    | ESLint                                 |
-| `npm run format`                  | Prettier write                         |
-| `npm run typecheck`               | `tsc --noEmit`                         |
+| Command                     | Does                                   |
+| --------------------------- | -------------------------------------- |
+| `pnpm ios` / `pnpm android` | Start Metro + open on simulator/device |
+| `pnpm lint`                 | ESLint                                 |
+| `pnpm format`               | Prettier write                         |
+| `pnpm typecheck`            | `tsc --noEmit`                         |
 
 A pre-commit hook (husky + lint-staged) auto-lints and formats staged files.
 
