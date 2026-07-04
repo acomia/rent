@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   View,
@@ -11,21 +12,36 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CartButton } from '@/components/catalog/cart-button';
-import { CLOUD, INK } from '@/components/catalog/catalog-style';
+import { CLOUD, GRAPE, INK } from '@/components/catalog/catalog-style';
+import {
+  EMPTY_SHEET_FILTERS,
+  FilterSheet,
+  type SheetFilters,
+} from '@/components/catalog/filter-sheet';
 import { FilterPill } from '@/components/catalog/filter-pill';
 import { ProductCard } from '@/components/catalog/product-card';
-import { useCart } from '@/features/catalog/cart-context';
 import {
-  getCategory,
-  productsByCategory,
-  type CategorySlug,
-  type Gender,
-} from '@/features/catalog/mock-data';
+  CatalogEmpty,
+  CatalogError,
+  CatalogLoading,
+} from '@/components/catalog/states';
+import { useCart } from '@/features/catalog/cart-context';
+import { useItems } from '@/features/catalog/hooks';
+import type { CategorySlug, Gender, Item } from '@/features/catalog/types';
 
-function chunkPairs<T>(items: T[]): T[][] {
-  const rows: T[][] = [];
+function chunkPairs(items: Item[]): Item[][] {
+  const rows: Item[][] = [];
   for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
   return rows;
+}
+
+function hasActiveFilters(f: SheetFilters): boolean {
+  return (
+    f.occasion !== null ||
+    f.size !== null ||
+    f.minPrice !== null ||
+    f.maxPrice !== null
+  );
 }
 
 export default function CategoryListing() {
@@ -38,23 +54,37 @@ export default function CategoryListing() {
     gender?: Gender;
   }>();
 
-  // Normalize once so the header and the grid can never disagree.
   const categorySlug = (slug ?? 'gowns') as CategorySlug;
-  const category = getCategory(categorySlug);
+  const category = useMemo(
+    () => CATEGORY_NAMES[categorySlug] ?? 'Catalog',
+    [categorySlug],
+  );
+
   // 'high' → priced high-to-low; toggled by the Price pill.
   const [sortDesc, setSortDesc] = useState(false);
-  // Seeded from the route param, then toggled locally by the section pill.
   const [genderFilter, setGenderFilter] = useState<Gender>(gender ?? 'women');
+  const [sheet, setSheet] = useState<SheetFilters>(EMPTY_SHEET_FILTERS);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  const products = useMemo(() => {
-    const base = productsByCategory(categorySlug).filter(
-      (p) => p.gender === genderFilter,
-    );
-    return [...base].sort((a, b) =>
-      sortDesc ? b.pricePerDay - a.pricePerDay : a.pricePerDay - b.pricePerDay,
-    );
-  }, [categorySlug, genderFilter, sortDesc]);
+  const { data, isLoading, isError, refetch, isRefetching } = useItems({
+    category: categorySlug,
+    gender: genderFilter,
+    sort: sortDesc ? 'desc' : 'asc',
+    occasion: sheet.occasion,
+    size: sheet.size,
+    minPrice: sheet.minPrice,
+    maxPrice: sheet.maxPrice,
+  });
 
+  // Size chips reflect every size in this category/gender, independent of the
+  // other filters, so selecting a size never empties the size list.
+  const sizePool = useItems({ category: categorySlug, gender: genderFilter });
+  const sizeOptions = useMemo(
+    () => [...new Set((sizePool.data ?? []).flatMap((i) => i.sizes))],
+    [sizePool.data],
+  );
+
+  const products = data ?? [];
   const rows = chunkPairs(products);
 
   return (
@@ -63,6 +93,13 @@ export default function CategoryListing() {
       contentContainerClassName="gap-6 px-6"
       contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 48 }}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={refetch}
+          tintColor={GRAPE}
+        />
+      }
     >
       <View className="flex-row items-center justify-between">
         <Pressable
@@ -77,7 +114,7 @@ export default function CategoryListing() {
       </View>
 
       <Text className="font-sans-extrabold text-4xl text-ink dark:text-cloud">
-        {category?.name ?? 'Catalog'}
+        {category}
       </Text>
 
       <View className="flex-row gap-3">
@@ -94,12 +131,20 @@ export default function CategoryListing() {
             setGenderFilter((g) => (g === 'men' ? 'women' : 'men'))
           }
         />
+        <FilterPill
+          label="Filters"
+          icon="filter"
+          active={hasActiveFilters(sheet)}
+          onPress={() => setSheetOpen(true)}
+        />
       </View>
 
-      {products.length === 0 ? (
-        <Text className="font-sans text-base text-muted">
-          Nothing here yet — try the other section.
-        </Text>
+      {isLoading ? (
+        <CatalogLoading />
+      ) : isError ? (
+        <CatalogError onRetry={refetch} />
+      ) : products.length === 0 ? (
+        <CatalogEmpty message="Nothing here yet — try another section or filter." />
       ) : (
         <View className="gap-6">
           {rows.map((row, i) => (
@@ -123,6 +168,22 @@ export default function CategoryListing() {
           ))}
         </View>
       )}
+
+      <FilterSheet
+        visible={sheetOpen}
+        value={sheet}
+        sizes={sizeOptions}
+        onApply={setSheet}
+        onClose={() => setSheetOpen(false)}
+      />
     </ScrollView>
   );
 }
+
+const CATEGORY_NAMES: Record<CategorySlug, string> = {
+  gowns: 'Gowns',
+  costumes: 'Costumes',
+  bags: 'Bags',
+  shoes: 'Shoes',
+  accessories: 'Accessories',
+};

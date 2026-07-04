@@ -1,57 +1,56 @@
 /**
- * Static demo catalog for the restyle. No backend — real listings arrive in
- * Phase 2. Prices are per-day rental rates in Philippine pesos.
+ * Offline fallback catalog. Used only when Supabase isn't configured (no `.env`)
+ * so the app still renders a full catalog for demos — mirrors the real data
+ * shapes in `types.ts`. Real listings come from Supabase in Phase 2; see
+ * `api.ts`. Prices are per-day rental rates in Philippine pesos.
  *
  * `tint` names a pastel surface token (see tailwind.config.js); `icon` is a
- * MaterialCommunityIcons glyph used in place of product photography so the
- * catalog renders fully offline and on-brand.
+ * MaterialCommunityIcons glyph used in place of product photography.
  */
 
-export type Gender = 'women' | 'men';
+import type { Category, Item } from '@/features/catalog/types';
 
-export type Tint = 'lilac' | 'sky' | 'blush' | 'butter';
-
-export type CategorySlug =
-  'gowns' | 'costumes' | 'bags' | 'shoes' | 'accessories';
-
-export type Category = {
-  slug: CategorySlug;
-  name: string;
-  /** MaterialCommunityIcons glyph name. */
-  icon: string;
-  tint: Tint;
-};
-
-export type Product = {
-  id: string;
-  name: string;
-  designer: string;
-  category: CategorySlug;
-  gender: Gender;
-  /** Rental rate per day, in PHP. */
-  pricePerDay: number;
-  tint: Tint;
-  /** MaterialCommunityIcons glyph name. */
-  icon: string;
-  /** Hex swatches shown on the product detail. */
-  swatches: string[];
-  description: string;
-};
+export { formatPeso } from '@/features/catalog/types';
+export type {
+  Category,
+  CategorySlug,
+  Gender,
+  Item,
+  Tint,
+} from '@/features/catalog/types';
 
 export const CATEGORIES: Category[] = [
-  { slug: 'gowns', name: 'Gowns', icon: 'hanger', tint: 'lilac' },
-  { slug: 'costumes', name: 'Costumes', icon: 'drama-masks', tint: 'blush' },
-  { slug: 'bags', name: 'Bags', icon: 'bag-personal-outline', tint: 'sky' },
-  { slug: 'shoes', name: 'Shoes', icon: 'shoe-heel', tint: 'butter' },
+  { slug: 'gowns', name: 'Gowns', icon: 'hanger', tint: 'lilac', count: 3 },
+  {
+    slug: 'costumes',
+    name: 'Costumes',
+    icon: 'drama-masks',
+    tint: 'blush',
+    count: 3,
+  },
+  {
+    slug: 'bags',
+    name: 'Bags',
+    icon: 'bag-personal-outline',
+    tint: 'sky',
+    count: 2,
+  },
+  { slug: 'shoes', name: 'Shoes', icon: 'shoe-heel', tint: 'butter', count: 2 },
   {
     slug: 'accessories',
     name: 'Accessories',
     icon: 'necklace',
     tint: 'lilac',
+    count: 2,
   },
 ];
 
-export const PRODUCTS: Product[] = [
+// Shared, dependency-free defaults for the offline fallback. `units` stays empty
+// (unit tracking is a real-DB concern); `sizes` gives the detail screen chips.
+const APPAREL_SIZES = ['XS', 'S', 'M', 'L'];
+const NO_SIZE: string[] = [];
+
+export const PRODUCTS: Item[] = [
   {
     id: 'g1',
     name: 'Aurora Ball Gown',
@@ -59,9 +58,15 @@ export const PRODUCTS: Product[] = [
     category: 'gowns',
     gender: 'women',
     pricePerDay: 2200,
+    deposit: 3000,
+    cleaningBufferDays: 2,
     tint: 'lilac',
     icon: 'hanger',
     swatches: ['#8165CA', '#EDE7FA', '#1A1523'],
+    photos: [],
+    occasion: ['wedding', 'debut'],
+    units: [],
+    sizes: APPAREL_SIZES,
     description:
       'A sweeping tulle ball gown with a hand-beaded bodice. Made for the moment you walk in and the room turns.',
   },
@@ -72,9 +77,15 @@ export const PRODUCTS: Product[] = [
     category: 'gowns',
     gender: 'women',
     pricePerDay: 1800,
+    deposit: 2500,
+    cleaningBufferDays: 2,
     tint: 'blush',
     icon: 'hanger',
     swatches: ['#ED5C9D', '#FCE0EC', '#FDF1AA'],
+    photos: [],
+    occasion: ['formal', 'debut'],
+    units: [],
+    sizes: APPAREL_SIZES,
     description:
       'A liquid-satin column cut on the bias. Quiet, confident, and impossibly elegant.',
   },
@@ -85,9 +96,15 @@ export const PRODUCTS: Product[] = [
     category: 'gowns',
     gender: 'women',
     pricePerDay: 2600,
+    deposit: 3500,
+    cleaningBufferDays: 2,
     tint: 'sky',
     icon: 'hanger',
     swatches: ['#0F766E', '#D2EDF6', '#1A1523'],
+    photos: [],
+    occasion: ['formal', 'wedding'],
+    units: [],
+    sizes: ['S', 'M', 'L'],
     description:
       'Floor-length with a detachable cape. Drama on the shoulders, ease everywhere else.',
   },
@@ -98,9 +115,15 @@ export const PRODUCTS: Product[] = [
     category: 'costumes',
     gender: 'women',
     pricePerDay: 1400,
+    deposit: 2000,
+    cleaningBufferDays: 2,
     tint: 'blush',
     icon: 'drama-masks',
     swatches: ['#8165CA', '#FDF1AA', '#1A1523'],
+    photos: [],
+    occasion: ['cosplay'],
+    units: [],
+    sizes: ['S', 'M', 'L'],
     description:
       'Full masquerade look — mask, gloves, and a corseted skirt. Everything for the ball, nothing to buy.',
   },
@@ -111,9 +134,15 @@ export const PRODUCTS: Product[] = [
     category: 'costumes',
     gender: 'men',
     pricePerDay: 1200,
+    deposit: 1500,
+    cleaningBufferDays: 2,
     tint: 'butter',
     icon: 'tshirt-crew-outline',
     swatches: ['#FDF1AA', '#F7F6FB', '#1A1523'],
+    photos: [],
+    occasion: ['formal', 'wedding'],
+    units: [],
+    sizes: ['S', 'M', 'L', 'XL'],
     description:
       'Hand-embroidered piña barong. The classic Filipino formal, tailored to fit and pressed to perfection.',
   },
@@ -124,9 +153,15 @@ export const PRODUCTS: Product[] = [
     category: 'costumes',
     gender: 'women',
     pricePerDay: 1500,
+    deposit: 2000,
+    cleaningBufferDays: 2,
     tint: 'sky',
     icon: 'drama-masks',
     swatches: ['#ED5C9D', '#FDF1AA', '#1A1523'],
+    photos: [],
+    occasion: ['cosplay'],
+    units: [],
+    sizes: ['S', 'M', 'L'],
     description: 'A fringed 1920s flapper with headpiece. Every step shimmers.',
   },
   {
@@ -136,9 +171,15 @@ export const PRODUCTS: Product[] = [
     category: 'bags',
     gender: 'women',
     pricePerDay: 600,
+    deposit: 1000,
+    cleaningBufferDays: 1,
     tint: 'sky',
     icon: 'bag-personal-outline',
     swatches: ['#D2EDF6', '#8165CA', '#F7F6FB'],
+    photos: [],
+    occasion: ['formal', 'wedding'],
+    units: [],
+    sizes: NO_SIZE,
     description:
       'A crystal-embellished evening clutch that catches every light in the room.',
   },
@@ -149,9 +190,15 @@ export const PRODUCTS: Product[] = [
     category: 'bags',
     gender: 'women',
     pricePerDay: 500,
+    deposit: 800,
+    cleaningBufferDays: 1,
     tint: 'butter',
     icon: 'bag-personal-outline',
     swatches: ['#FDF1AA', '#1A1523', '#F7F6FB'],
+    photos: [],
+    occasion: ['formal'],
+    units: [],
+    sizes: NO_SIZE,
     description:
       'A structured woven top-handle bag — daytime formal that never tries too hard.',
   },
@@ -162,9 +209,15 @@ export const PRODUCTS: Product[] = [
     category: 'shoes',
     gender: 'women',
     pricePerDay: 450,
+    deposit: 800,
+    cleaningBufferDays: 1,
     tint: 'butter',
     icon: 'shoe-heel',
     swatches: ['#FDF1AA', '#EDE7FA', '#1A1523'],
+    photos: [],
+    occasion: ['formal', 'debut'],
+    units: [],
+    sizes: ['36', '37', '38', '39'],
     description:
       'Barely-there crystal straps on a comfortable block heel. Made to last the whole night.',
   },
@@ -175,9 +228,15 @@ export const PRODUCTS: Product[] = [
     category: 'shoes',
     gender: 'men',
     pricePerDay: 400,
+    deposit: 700,
+    cleaningBufferDays: 1,
     tint: 'sky',
     icon: 'shoe-formal',
     swatches: ['#1A1523', '#D2EDF6', '#F7F6FB'],
+    photos: [],
+    occasion: ['formal'],
+    units: [],
+    sizes: ['41', '42', '43'],
     description:
       'A high-shine patent oxford. The finishing note on any black-tie look.',
   },
@@ -188,9 +247,15 @@ export const PRODUCTS: Product[] = [
     category: 'accessories',
     gender: 'women',
     pricePerDay: 350,
+    deposit: 500,
+    cleaningBufferDays: 1,
     tint: 'lilac',
     icon: 'necklace',
     swatches: ['#EDE7FA', '#ED5C9D', '#F7F6FB'],
+    photos: [],
+    occasion: ['wedding', 'debut'],
+    units: [],
+    sizes: NO_SIZE,
     description:
       'Matching pearl-drop necklace and earrings. Soft, timeless, and camera-ready.',
   },
@@ -201,30 +266,16 @@ export const PRODUCTS: Product[] = [
     category: 'accessories',
     gender: 'men',
     pricePerDay: 300,
+    deposit: 500,
+    cleaningBufferDays: 1,
     tint: 'blush',
     icon: 'sunglasses',
     swatches: ['#1A1523', '#FCE0EC', '#F7F6FB'],
+    photos: [],
+    occasion: ['formal'],
+    units: [],
+    sizes: NO_SIZE,
     description:
       'Polished onyx cufflinks in a brushed-silver setting. The quiet detail that finishes the suit.',
   },
 ];
-
-export function productsByCategory(slug: CategorySlug): Product[] {
-  return PRODUCTS.filter((p) => p.category === slug);
-}
-
-export function categoryCount(slug: CategorySlug): number {
-  return productsByCategory(slug).length;
-}
-
-export function getProduct(id: string): Product | undefined {
-  return PRODUCTS.find((p) => p.id === id);
-}
-
-export function getCategory(slug: string): Category | undefined {
-  return CATEGORIES.find((c) => c.slug === slug);
-}
-
-export function formatPeso(amount: number): string {
-  return `₱${amount.toLocaleString('en-PH')}`;
-}

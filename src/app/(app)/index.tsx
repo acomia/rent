@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   Alert,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   View,
@@ -16,19 +17,17 @@ import { CategoryTile } from '@/components/catalog/category-tile';
 import { CLOUD, GRAPE } from '@/components/catalog/catalog-style';
 import { SearchBar } from '@/components/catalog/search-bar';
 import { SegmentedToggle } from '@/components/catalog/segmented-toggle';
+import { CatalogError, CatalogLoading } from '@/components/catalog/states';
 import { useAuth } from '@/features/auth/auth-context';
-import {
-  CATEGORIES,
-  categoryCount,
-  type Gender,
-} from '@/features/catalog/mock-data';
+import { useCategories } from '@/features/catalog/hooks';
+import type { Category, Gender } from '@/features/catalog/types';
 
-// Two per row; a trailing spacer keeps a lone last tile from stretching wide.
-const ROWS = [
-  CATEGORIES.slice(0, 2),
-  CATEGORIES.slice(2, 4),
-  CATEGORIES.slice(4),
-];
+// Two tiles per row; a trailing spacer keeps a lone last tile from stretching.
+function chunkPairs(items: Category[]): Category[][] {
+  const rows: Category[][] = [];
+  for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
+  return rows;
+}
 
 export default function Home() {
   const insets = useSafeAreaInsets();
@@ -40,12 +39,35 @@ export default function Home() {
   const [gender, setGender] = useState<Gender>('women');
   const [query, setQuery] = useState('');
 
+  const {
+    data: categories,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+  } = useCategories();
+
+  function submitSearch() {
+    const q = query.trim();
+    if (!q) return;
+    router.push({ pathname: '/(app)/search', params: { q } });
+  }
+
+  const rows = chunkPairs(categories ?? []);
+
   return (
     <ScrollView
       className="flex-1 bg-canvas dark:bg-night-950"
       contentContainerClassName="gap-7 px-6"
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 48 }}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={refetch}
+          tintColor={GRAPE}
+        />
+      }
     >
       <View className="flex-row items-center justify-between">
         <Pressable
@@ -72,7 +94,12 @@ export default function Home() {
         </Text>
       </View>
 
-      <SearchBar value={query} onChangeText={setQuery} returnKeyType="search" />
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        returnKeyType="search"
+        onSubmitEditing={submitSearch}
+      />
 
       <SegmentedToggle
         options={[
@@ -87,24 +114,30 @@ export default function Home() {
         <Text className="font-sans-bold text-xl text-ink dark:text-cloud">
           Categories
         </Text>
-        {ROWS.map((row, i) => (
-          <View key={i} className="flex-row gap-4">
-            {row.map((category) => (
-              <CategoryTile
-                key={category.slug}
-                category={category}
-                count={categoryCount(category.slug)}
-                onPress={() =>
-                  router.push({
-                    pathname: '/(app)/category/[slug]',
-                    params: { slug: category.slug, gender },
-                  })
-                }
-              />
-            ))}
-            {row.length === 1 ? <View className="flex-1" /> : null}
-          </View>
-        ))}
+        {isLoading ? (
+          <CatalogLoading />
+        ) : isError ? (
+          <CatalogError onRetry={refetch} />
+        ) : (
+          rows.map((row, i) => (
+            <View key={i} className="flex-row gap-4">
+              {row.map((category) => (
+                <CategoryTile
+                  key={category.slug}
+                  category={category}
+                  count={category.count}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(app)/category/[slug]',
+                      params: { slug: category.slug, gender },
+                    })
+                  }
+                />
+              ))}
+              {row.length === 1 ? <View className="flex-1" /> : null}
+            </View>
+          ))
+        )}
       </View>
     </ScrollView>
   );

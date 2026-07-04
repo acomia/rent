@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Pressable, Text, View, useColorScheme } from 'react-native';
 
-import { formatPeso, type Product } from '@/features/catalog/mock-data';
+import { formatPeso, type Item } from '@/features/catalog/mock-data';
 import { CLOUD, INK, tintAccent, tintClass } from './catalog-style';
 import { Glyph } from './glyph';
 
@@ -16,7 +16,7 @@ export function ProductCard({
   onPress,
   onAdd,
 }: {
-  product: Product;
+  product: Item;
   added: boolean;
   onPress?: () => void;
   onAdd?: () => void;
