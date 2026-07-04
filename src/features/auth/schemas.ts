@@ -1,0 +1,82 @@
+import { z } from 'zod';
+
+/**
+ * Bump when Terms or Privacy copy changes so returning customers can be asked
+ * to re-accept. Stored on `customers.terms_version` at signup.
+ */
+export const TERMS_VERSION = '2026-07-01';
+
+/**
+ * PH mobile numbers: `09XXXXXXXXX` or `+639XXXXXXXXX`. Normalized to E.164
+ * (`+63…`) before it ever reaches Supabase, which requires E.164.
+ */
+const phField = z
+  .string()
+  .trim()
+  .regex(/^(\+63|0)9\d{9}$/, 'Enter a valid PH mobile number (09xx xxx xxxx)');
+
+export function normalizePhone(raw: string): string {
+  const v = raw.trim();
+  return v.startsWith('0') ? `+63${v.slice(1)}` : v;
+}
+
+const password = z.string().min(8, 'At least 8 characters').max(72, 'Too long'); // bcrypt truncates at 72 bytes
+
+export const signupSchema = z
+  .object({
+    fullName: z.string().trim().min(2, 'Enter your full name').max(120),
+    email: z.string().trim().toLowerCase().email('Enter a valid email'),
+    phone: phField,
+    password,
+    confirmPassword: z.string(),
+    acceptedTerms: z
+      .boolean()
+      .refine((v) => v === true, 'Please accept the Terms & Privacy Policy'),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match',
+  });
+
+export const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email'),
+  password: z.string().min(1, 'Enter your password'),
+});
+
+export const forgotRequestSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email'),
+});
+
+export const forgotResetSchema = z
+  .object({
+    code: z
+      .string()
+      .trim()
+      .regex(/^\d{6}$/, 'Enter the 6-digit code'),
+    password,
+    confirmPassword: z.string(),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match',
+  });
+
+export const otpSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'Enter the 6-digit code'),
+});
+
+export const profileSchema = z.object({
+  fullName: z.string().trim().min(2, 'Enter your full name').max(120),
+  phone: phField,
+  address: z.string().trim().max(300).optional().or(z.literal('')),
+});
+
+export type SignupForm = z.infer<typeof signupSchema>;
+export type LoginForm = z.infer<typeof loginSchema>;
+export type ForgotRequestForm = z.infer<typeof forgotRequestSchema>;
+export type ForgotResetForm = z.infer<typeof forgotResetSchema>;
+export type OtpForm = z.infer<typeof otpSchema>;
+export type ProfileForm = z.infer<typeof profileSchema>;
