@@ -47,9 +47,25 @@ Auth needs one-time setup in the Supabase dashboard before signup/login work:
 3. **Auth → Providers → Phone** — connect an SMS provider (Twilio / MessageBird /
    Vonage). Until this is set, phone OTP can't send — use the **dev-only "Skip
    verification"** button on the OTP screen to test the rest of the flow.
-4. **Auth → Emails → Reset password** — the default template includes `{{ .Token }}`,
-   which the recovery-OTP forgot-password flow relies on. No change needed unless
-   you've customized it.
+4. **Auth → Emails → Reset password** — the forgot-password flow is recovery-OTP
+   based, so the email **must** include `{{ .Token }}` (the 6-digit code the app
+   asks for). The Supabase default template only sends a `{{ .ConfirmationURL }}`
+   link, **not** a code — so you must edit the "Message body" to include the
+   token, e.g.:
+
+   ```html
+   <h2>Reset your password</h2>
+   <p>Enter this 6-digit code in the app to reset your password:</p>
+   <p style="font-size:28px;font-weight:bold;letter-spacing:6px">
+     {{ .Token }}
+   </p>
+   <p>
+     This code expires in 1 hour. If you didn't request it, ignore this email.
+   </p>
+   ```
+
+   Without `{{ .Token }}` in the template, the reset screen has no code to enter
+   and the flow cannot complete.
 
 ## Scripts
 

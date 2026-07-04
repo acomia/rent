@@ -15,6 +15,40 @@ import {
 } from '@/features/auth/schemas';
 import { supabase } from '@/lib/supabase';
 
+/**
+ * Supabase auth errors aren't always presentable. A failed email send comes
+ * back as a raw 500 whose `message` is a stringified fetch Response (shows up
+ * as `{"status":500,...}` on screen). Map the cases we expect to something a
+ * user can act on; keep the raw error in dev for debugging.
+ */
+function authErrorMessage(error: unknown): string {
+  if (__DEV__) console.warn('[forgot-password] auth error:', error);
+
+  const status =
+    typeof error === 'object' && error !== null && 'status' in error
+      ? (error as { status?: number }).status
+      : undefined;
+  const raw =
+    typeof error === 'object' && error !== null && 'message' in error
+      ? String((error as { message?: unknown }).message ?? '')
+      : '';
+
+  // 5xx from /recover means Supabase couldn't send the email (SMTP misconfig).
+  // The failure sometimes arrives as a stringified fetch Response rather than a
+  // clean error, so check the raw text for an embedded 5xx too.
+  if ((status && status >= 500) || /"status":\s*5\d\d/.test(raw)) {
+    return "We couldn't send the reset code right now. Please try again in a moment.";
+  }
+  // Rate limit — GoTrue's own copy is already clear when present.
+  if (status === 429) {
+    return raw || 'Too many attempts. Please wait a minute and try again.';
+  }
+  // A clean, human message from the server (e.g. "Token has expired…").
+  // Reject anything that looks like a serialized object.
+  if (raw && !raw.trimStart().startsWith('{')) return raw;
+  return 'Something went wrong. Please try again.';
+}
+
 export default function ForgotPassword() {
   const { replace } = useRouter();
   const [email, setEmail] = useState<string | null>(null);
@@ -50,7 +84,7 @@ function RequestStage({ onSent }: { onSent: (email: string) => void }) {
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email);
     if (error) {
-      setError('root', { message: error.message });
+      setError('root', { message: authErrorMessage(error) });
       return;
     }
     onSent(email);
@@ -120,14 +154,14 @@ function ResetStage({
       type: 'recovery',
     });
     if (verifyErr) {
-      setError('code', { message: verifyErr.message });
+      setError('code', { message: authErrorMessage(verifyErr) });
       return;
     }
     const { error: updateErr } = await supabase.auth.updateUser({
       password: values.password,
     });
     if (updateErr) {
-      setError('root', { message: updateErr.message });
+      setError('root', { message: authErrorMessage(updateErr) });
       return;
     }
     // Sign out so the recovery session isn't reused; user logs in fresh.
