@@ -13,12 +13,12 @@ export function Brandmark({
   return (
     <View className="items-center gap-2">
       <View className="flex-row items-end gap-1">
-        <Text className="text-4xl font-extrabold tracking-tighter text-ink dark:text-cream">
+        <Text className="font-sans-extrabold text-4xl tracking-tighter text-ink dark:text-cloud">
           rent
         </Text>
-        <View className="mb-1.5 h-2.5 w-2.5 rounded-full bg-wine" />
+        <View className="mb-1.5 h-2.5 w-2.5 rounded-full bg-grape" />
       </View>
-      <Text className="text-sm font-medium text-muted">{tagline}</Text>
+      <Text className="font-sans-medium text-sm text-muted">{tagline}</Text>
     </View>
   );
 }

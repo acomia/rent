@@ -68,7 +68,7 @@ export default function Signup() {
       subtitle="A few details, then we verify your number by text."
     >
       {!configured ? (
-        <Text className="rounded-xl bg-amber-500/15 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+        <Text className="rounded-xl bg-amber-500/15 px-4 py-3 font-sans text-sm text-amber-700 dark:text-amber-400">
           Supabase keys are missing from .env — signup will not work yet.
         </Text>
       ) : null}
@@ -175,26 +175,26 @@ export default function Signup() {
               <View
                 className={`mt-0.5 h-6 w-6 items-center justify-center rounded-md border-2 ${
                   value
-                    ? 'border-wine bg-wine dark:border-wine-soft dark:bg-wine-soft'
+                    ? 'border-grape bg-grape dark:border-grape-soft dark:bg-grape-soft'
                     : 'border-black/25 dark:border-white/30'
                 }`}
               >
                 {value ? (
-                  <Text className="text-sm font-bold text-white">✓</Text>
+                  <Text className="font-sans-bold text-sm text-white">✓</Text>
                 ) : null}
               </View>
-              <Text className="flex-1 text-sm leading-5 text-muted">
+              <Text className="flex-1 font-sans text-sm leading-5 text-muted">
                 I agree to the{' '}
                 <Link
                   href="/(auth)/terms"
-                  className="font-semibold text-wine dark:text-champagne"
+                  className="font-sans-semibold text-grape dark:text-grape-soft"
                 >
                   Terms
                 </Link>{' '}
                 and{' '}
                 <Link
                   href="/(auth)/privacy"
-                  className="font-semibold text-wine dark:text-champagne"
+                  className="font-sans-semibold text-grape dark:text-grape-soft"
                 >
                   Privacy Policy
                 </Link>
@@ -202,7 +202,7 @@ export default function Signup() {
               </Text>
             </Pressable>
             {errors.acceptedTerms ? (
-              <Text className="text-xs text-red-500">
+              <Text className="font-sans text-xs text-red-500">
                 {errors.acceptedTerms.message}
               </Text>
             ) : null}
@@ -211,7 +211,9 @@ export default function Signup() {
       />
 
       {errors.root ? (
-        <Text className="text-sm text-red-500">{errors.root.message}</Text>
+        <Text className="font-sans text-sm text-red-500">
+          {errors.root.message}
+        </Text>
       ) : null}
 
       <Button
@@ -221,10 +223,10 @@ export default function Signup() {
       />
 
       <View className="flex-row justify-center gap-1 pt-2">
-        <Text className="text-muted">Already have an account?</Text>
+        <Text className="font-sans text-muted">Already have an account?</Text>
         <Link
           href="/(auth)/login"
-          className="font-semibold text-wine dark:text-champagne"
+          className="font-sans-semibold text-grape dark:text-grape-soft"
         >
           Sign in
         </Link>

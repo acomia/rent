@@ -95,7 +95,7 @@ export default function VerifyOtp() {
       }
     >
       {sendError ? (
-        <Text className="rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-500">
+        <Text className="rounded-xl bg-red-500/10 px-4 py-3 font-sans text-sm text-red-500">
           {sendError}
         </Text>
       ) : null}
@@ -134,7 +134,7 @@ export default function VerifyOtp() {
           className={
             cooldown > 0
               ? 'text-muted'
-              : 'font-medium text-wine dark:text-champagne'
+              : 'font-sans-medium text-grape dark:text-grape-soft'
           }
         >
           {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
@@ -156,7 +156,9 @@ export default function VerifyOtp() {
         }}
         className="self-center py-2 active:opacity-70"
       >
-        <Text className="text-sm text-muted">Use a different number</Text>
+        <Text className="font-sans text-sm text-muted">
+          Use a different number
+        </Text>
       </Pressable>
     </AuthScreen>
   );

@@ -5,21 +5,23 @@ import {
   type PressableProps,
 } from 'react-native';
 
-type Variant = 'primary' | 'outline' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'outline' | 'ghost';
 
 const base =
-  'w-full flex-row items-center justify-center rounded-2xl px-5 py-4 active:opacity-90';
+  'w-full flex-row items-center justify-center rounded-full px-5 py-4 active:opacity-90';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-wine dark:bg-wine-soft',
-  outline: 'border border-wine/40 bg-transparent dark:border-cream/30',
+  primary: 'bg-grape dark:bg-grape-soft',
+  secondary: 'bg-bubblegum',
+  outline: 'border border-grape/40 bg-transparent dark:border-cloud/30',
   ghost: 'bg-transparent',
 };
 
 const labelVariants: Record<Variant, string> = {
   primary: 'text-white',
-  outline: 'text-wine dark:text-cream',
-  ghost: 'text-wine dark:text-cream',
+  secondary: 'text-white',
+  outline: 'text-grape dark:text-cloud',
+  ghost: 'text-grape dark:text-cloud',
 };
 
 type Props = PressableProps & {
@@ -45,9 +47,17 @@ export function Button({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#fff' : '#6B2C46'} />
+        <ActivityIndicator
+          color={
+            variant === 'primary' || variant === 'secondary'
+              ? '#fff'
+              : '#8165CA'
+          }
+        />
       ) : (
-        <Text className={`text-base font-semibold ${labelVariants[variant]}`}>
+        <Text
+          className={`font-sans-semibold text-base ${labelVariants[variant]}`}
+        >
           {label}
         </Text>
       )}

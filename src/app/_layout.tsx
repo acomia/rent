@@ -1,6 +1,14 @@
 import '@/global.css';
 
 import {
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  Poppins_800ExtraBold,
+  useFonts,
+} from '@expo-google-fonts/poppins';
+import {
   DarkTheme,
   DefaultTheme,
   Stack,
@@ -60,6 +68,19 @@ function AuthGate() {
 
 function RootLayout() {
   const colorScheme = useColorScheme();
+  const [fontsLoaded, fontError] = useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    Poppins_800ExtraBold,
+  });
+
+  // Hold the splash until Poppins is ready so no screen flashes in a fallback
+  // face. If loading fails, proceed anyway (system font) rather than hang on a
+  // blank splash. AuthGate hides the splash once the session has resolved.
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

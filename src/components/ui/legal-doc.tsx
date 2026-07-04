@@ -21,12 +21,12 @@ export function LegalDoc({
   const insets = useSafeAreaInsets();
   const { back } = useRouter();
   return (
-    <View className="flex-1 bg-blush dark:bg-plum-950">
+    <View className="flex-1 bg-canvas dark:bg-night-950">
       <View
         className="flex-row items-center justify-between px-6 pb-3"
         style={{ paddingTop: insets.top + 12 }}
       >
-        <Text className="text-2xl font-semibold text-ink dark:text-cream">
+        <Text className="font-sans-bold text-2xl text-ink dark:text-cloud">
           {title}
         </Text>
         <Pressable
@@ -35,26 +35,32 @@ export function LegalDoc({
           onPress={() => back()}
           className="rounded-full bg-black/5 px-4 py-2 active:opacity-70 dark:bg-white/10"
         >
-          <Text className="font-medium text-wine dark:text-cream">Done</Text>
+          <Text className="font-sans-medium text-grape dark:text-cloud">
+            Done
+          </Text>
         </Pressable>
       </View>
       <ScrollView
         contentContainerClassName="gap-5 px-6 pb-16 pt-2"
         showsVerticalScrollIndicator={false}
       >
-        <Text className="text-xs uppercase tracking-widest text-champagne">
+        <Text className="font-sans-semibold text-xs uppercase tracking-widest text-grape dark:text-grape-soft">
           Version {TERMS_VERSION} · Draft
         </Text>
-        <Text className="text-base leading-6 text-muted">{intro}</Text>
+        <Text className="font-sans text-base leading-6 text-muted">
+          {intro}
+        </Text>
         {sections.map((s) => (
           <View key={s.heading} className="gap-1.5">
-            <Text className="text-lg font-semibold text-ink dark:text-cream">
+            <Text className="font-sans-semibold text-lg text-ink dark:text-cloud">
               {s.heading}
             </Text>
-            <Text className="text-[15px] leading-6 text-muted">{s.body}</Text>
+            <Text className="font-sans text-[15px] leading-6 text-muted">
+              {s.body}
+            </Text>
           </View>
         ))}
-        <Text className="pt-4 text-xs italic text-muted">
+        <Text className="pt-4 font-sans text-xs italic text-muted">
           Placeholder copy — final legal text is added before launch (Phase 9).
         </Text>
       </ScrollView>

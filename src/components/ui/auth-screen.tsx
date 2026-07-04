@@ -29,7 +29,7 @@ export function AuthScreen({
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-blush dark:bg-plum-950"
+      className="flex-1 bg-canvas dark:bg-night-950"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
@@ -43,11 +43,13 @@ export function AuthScreen({
       >
         {showBrandmark ? <Brandmark /> : null}
         <View className="gap-2">
-          <Text className="text-3xl font-semibold text-ink dark:text-cream">
+          <Text className="font-sans-bold text-3xl text-ink dark:text-cloud">
             {title}
           </Text>
           {subtitle ? (
-            <Text className="text-base leading-6 text-muted">{subtitle}</Text>
+            <Text className="font-sans text-base leading-6 text-muted">
+              {subtitle}
+            </Text>
           ) : null}
         </View>
         <View className="gap-4">{children}</View>

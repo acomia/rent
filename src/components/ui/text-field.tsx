@@ -21,18 +21,18 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
   const border = error
     ? 'border-red-500'
     : focused
-      ? 'border-wine dark:border-champagne'
+      ? 'border-grape dark:border-grape-soft'
       : 'border-transparent';
 
   return (
     <View className="w-full gap-2">
-      <Text className="text-sm font-medium text-ink dark:text-cream">
+      <Text className="font-sans-medium text-sm text-ink dark:text-cloud">
         {label}
       </Text>
       <TextInput
         ref={ref}
         placeholderTextColor="#A1A1AA"
-        className={`rounded-2xl border ${border} bg-black/[0.04] px-4 py-4 text-base text-ink dark:bg-white/[0.06] dark:text-cream`}
+        className={`rounded-2xl border font-sans ${border} bg-black/[0.04] px-4 py-4 text-base text-ink dark:bg-white/[0.06] dark:text-cloud`}
         {...rest}
         onFocus={(e) => {
           setFocused(true);
@@ -44,9 +44,9 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
         }}
       />
       {error ? (
-        <Text className="text-xs text-red-500">{error}</Text>
+        <Text className="font-sans text-xs text-red-500">{error}</Text>
       ) : hint ? (
-        <Text className="text-xs text-muted">{hint}</Text>
+        <Text className="font-sans text-xs text-muted">{hint}</Text>
       ) : null}
     </View>
   );

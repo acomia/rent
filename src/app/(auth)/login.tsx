@@ -49,7 +49,7 @@ export default function Login() {
   return (
     <AuthScreen title="Welcome back" subtitle="Sign in to browse and reserve.">
       {!configured ? (
-        <Text className="rounded-xl bg-amber-500/15 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+        <Text className="rounded-xl bg-amber-500/15 px-4 py-3 font-sans text-sm text-amber-700 dark:text-amber-400">
           Supabase keys are missing from .env — sign-in will not work yet.
         </Text>
       ) : null}
@@ -91,13 +91,15 @@ export default function Login() {
 
       <Link
         href="/(auth)/forgot-password"
-        className="self-end text-sm font-medium text-wine dark:text-champagne"
+        className="self-end font-sans-medium text-sm text-grape dark:text-grape-soft"
       >
         Forgot password?
       </Link>
 
       {errors.root ? (
-        <Text className="text-sm text-red-500">{errors.root.message}</Text>
+        <Text className="font-sans text-sm text-red-500">
+          {errors.root.message}
+        </Text>
       ) : null}
 
       <Button
@@ -106,16 +108,16 @@ export default function Login() {
         onPress={devBypass ? handleDevBypass : handleSubmit(onSubmit)}
       />
       {devBypass ? (
-        <Text className="text-center text-xs text-muted">
+        <Text className="text-center font-sans text-xs text-muted">
           Dev mode: signs in without a backend (no credentials needed).
         </Text>
       ) : null}
 
       <View className="flex-row justify-center gap-1 pt-2">
-        <Text className="text-muted">New here?</Text>
+        <Text className="font-sans text-muted">New here?</Text>
         <Link
           href="/(auth)/signup"
-          className="font-semibold text-wine dark:text-champagne"
+          className="font-sans-semibold text-grape dark:text-grape-soft"
         >
           Create an account
         </Link>

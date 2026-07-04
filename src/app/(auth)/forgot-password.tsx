@@ -80,7 +80,9 @@ function RequestStage({ onSent }: { onSent: (email: string) => void }) {
         )}
       />
       {errors.root ? (
-        <Text className="text-sm text-red-500">{errors.root.message}</Text>
+        <Text className="font-sans text-sm text-red-500">
+          {errors.root.message}
+        </Text>
       ) : null}
       <Button
         label="Send reset code"
@@ -190,7 +192,9 @@ function ResetStage({
         )}
       />
       {errors.root ? (
-        <Text className="text-sm text-red-500">{errors.root.message}</Text>
+        <Text className="font-sans text-sm text-red-500">
+          {errors.root.message}
+        </Text>
       ) : null}
       <Button
         label="Update password"
@@ -199,7 +203,7 @@ function ResetStage({
       />
       <Text
         onPress={onResend}
-        className="self-center py-2 text-sm font-medium text-wine dark:text-champagne"
+        className="self-center py-2 font-sans-medium text-sm text-grape dark:text-grape-soft"
       >
         Use a different email
       </Text>

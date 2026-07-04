@@ -15,10 +15,10 @@ export default function Profile() {
   if (!customer) {
     return (
       <View
-        className="flex-1 items-center justify-center bg-blush dark:bg-plum-950"
+        className="flex-1 items-center justify-center bg-canvas dark:bg-night-950"
         style={{ paddingTop: insets.top }}
       >
-        <ActivityIndicator color="#6B2C46" />
+        <ActivityIndicator color="#8165CA" />
       </View>
     );
   }
@@ -83,7 +83,7 @@ function ProfileForm({ customer }: { customer: Customer }) {
   }
 
   return (
-    <View className="flex-1 bg-blush dark:bg-plum-950">
+    <View className="flex-1 bg-canvas dark:bg-night-950">
       <View
         className="flex-row items-center justify-between px-5 pb-3"
         style={{ paddingTop: insets.top + 12 }}
@@ -93,9 +93,11 @@ function ProfileForm({ customer }: { customer: Customer }) {
           onPress={() => back()}
           className="py-1 active:opacity-70"
         >
-          <Text className="text-base text-wine dark:text-champagne">Back</Text>
+          <Text className="font-sans text-base text-grape dark:text-grape-soft">
+            Back
+          </Text>
         </Pressable>
-        <Text className="text-lg font-semibold text-ink dark:text-cream">
+        <Text className="font-sans-semibold text-lg text-ink dark:text-cloud">
           Profile
         </Text>
         <Pressable
@@ -104,7 +106,7 @@ function ProfileForm({ customer }: { customer: Customer }) {
           onPress={onSave}
           className="py-1 active:opacity-70"
         >
-          <Text className="text-base font-semibold text-wine dark:text-champagne">
+          <Text className="font-sans-semibold text-base text-grape dark:text-grape-soft">
             {saving ? 'Saving…' : 'Save'}
           </Text>
         </Pressable>
