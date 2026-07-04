@@ -1,8 +1,8 @@
 import { Feather } from '@expo/vector-icons';
+import { useBottomTabBarHeight } from 'expo-router/js-tabs';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   Pressable,
   RefreshControl,
   Text,
@@ -38,6 +38,7 @@ function chunkPairs(items: Category[]): Category[][] {
 
 export default function Home() {
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const router = useRouter();
   const { customer } = useAuth();
   const dark = useColorScheme() === 'dark';
@@ -89,7 +90,7 @@ export default function Home() {
   function submitSearch() {
     const q = query.trim();
     if (!q) return;
-    router.push({ pathname: '/(app)/search', params: { q } });
+    router.navigate({ pathname: '/(app)/(tabs)/search', params: { q } });
   }
 
   const rows = chunkPairs(categories ?? []);
@@ -99,7 +100,10 @@ export default function Home() {
       <Animated.ScrollView
         className="flex-1"
         contentContainerClassName="gap-7 px-6"
-        contentContainerStyle={{ paddingTop: barHeight + 8, paddingBottom: 48 }}
+        contentContainerStyle={{
+          paddingTop: barHeight + 8,
+          paddingBottom: tabBarHeight + 8,
+        }}
         showsVerticalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -195,16 +199,12 @@ export default function Home() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Account"
-            onPress={() => router.push('/(app)/profile')}
+            onPress={() => router.navigate('/(app)/(tabs)/profile')}
             className="h-11 w-11 items-center justify-center rounded-full bg-lilac active:opacity-70 dark:bg-night-800"
           >
             <Feather name="menu" size={20} color={dark ? CLOUD : GRAPE} />
           </Pressable>
-          <CartButton
-            onPress={() =>
-              Alert.alert('Your bag', 'Checkout arrives in the next phase.')
-            }
-          />
+          <CartButton onPress={() => router.navigate('/(app)/(tabs)/bag')} />
         </View>
       </Animated.View>
     </View>

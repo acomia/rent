@@ -1,17 +1,10 @@
-import { Feather } from '@expo/vector-icons';
+import { useBottomTabBarHeight } from 'expo-router/js-tabs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CLOUD, GRAPE, INK } from '@/components/catalog/catalog-style';
+import { GRAPE } from '@/components/catalog/catalog-style';
 import { ProductCard } from '@/components/catalog/product-card';
 import { SearchBar } from '@/components/catalog/search-bar';
 import {
@@ -31,14 +24,29 @@ function chunkPairs(items: Item[]): Item[][] {
 
 export default function Search() {
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const router = useRouter();
-  const dark = useColorScheme() === 'dark';
   const { add, has } = useCart();
   const { q } = useLocalSearchParams<{ q?: string }>();
 
   // `query` is the live text field; `term` is the committed search (on submit).
   const [query, setQuery] = useState(q ?? '');
   const [term, setTerm] = useState((q ?? '').trim());
+
+  // As a tab root this screen stays mounted, so arriving with a fresh `q` (e.g.
+  // submitting from the Home search bar) must update the committed search.
+  // Adjust during render on param change (React's prop-change pattern) rather
+  // than in an effect; only a non-empty query applies, so tabbing back in never
+  // clears a live search.
+  const [lastQ, setLastQ] = useState(q);
+  if (q !== lastQ) {
+    setLastQ(q);
+    const next = (q ?? '').trim();
+    if (next) {
+      setQuery(q ?? '');
+      setTerm(next);
+    }
+  }
 
   const { data, isLoading, isError, refetch, isRefetching } = useItems({
     search: term || undefined,
@@ -51,7 +59,10 @@ export default function Search() {
     <ScrollView
       className="flex-1 bg-canvas dark:bg-night-950"
       contentContainerClassName="gap-6 px-6"
-      contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 48 }}
+      contentContainerStyle={{
+        paddingTop: insets.top + 12,
+        paddingBottom: tabBarHeight + 8,
+      }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       refreshControl={
@@ -62,25 +73,13 @@ export default function Search() {
         />
       }
     >
-      <View className="flex-row items-center gap-3">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          onPress={() => router.back()}
-          className="h-11 w-11 items-center justify-center rounded-full bg-lilac active:opacity-70 dark:bg-night-800"
-        >
-          <Feather name="chevron-left" size={22} color={dark ? CLOUD : INK} />
-        </Pressable>
-        <View className="flex-1">
-          <SearchBar
-            value={query}
-            onChangeText={setQuery}
-            returnKeyType="search"
-            autoFocus={!term}
-            onSubmitEditing={() => setTerm(query.trim())}
-          />
-        </View>
-      </View>
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        returnKeyType="search"
+        autoFocus={!term}
+        onSubmitEditing={() => setTerm(query.trim())}
+      />
 
       {term ? (
         <Text className="font-sans text-base text-muted">
