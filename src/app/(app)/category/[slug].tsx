@@ -183,7 +183,6 @@ export default function CategoryListing() {
 const CATEGORY_NAMES: Record<CategorySlug, string> = {
   gowns: 'Gowns',
   costumes: 'Costumes',
-  bags: 'Bags',
   shoes: 'Shoes',
   accessories: 'Accessories',
 };

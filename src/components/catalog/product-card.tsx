@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Pressable, Text, View, useColorScheme } from 'react-native';
 
 import { formatPeso, type Item } from '@/features/catalog/mock-data';
@@ -32,13 +33,23 @@ export function ProductCard({
       className="flex-1 gap-3 active:opacity-90"
     >
       <View
-        className={`aspect-[3/4] items-center justify-center rounded-3xl dark:bg-night-800 ${tintClass[product.tint]}`}
+        className={`aspect-[3/4] items-center justify-center overflow-hidden rounded-3xl dark:bg-night-800 ${tintClass[product.tint]}`}
       >
-        <Glyph
-          name={product.icon}
-          size={64}
-          color={dark ? tintAccent[product.tint] : INK}
-        />
+        {product.photos[0] ? (
+          <Image
+            source={{ uri: product.photos[0] }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+            transition={200}
+            accessibilityLabel={product.name}
+          />
+        ) : (
+          <Glyph
+            name={product.icon}
+            size={64}
+            color={dark ? tintAccent[product.tint] : INK}
+          />
+        )}
       </View>
 
       <View className="gap-0.5 px-1">
