@@ -31,13 +31,12 @@ Goal: tooling and accounts ready, "hello world" running on a real device.
 - [ ] Create PayMongo account (test mode)
 - [ ] Create Resend account, verify a sending domain
 - [ ] Create SMS provider account (Semaphore or Twilio — PH-capable) for pickup + overdue alerts
-- [ ] Create Sentry project, add to Expo app
 - [ ] Set up `.env` handling (`expo-constants` + `EXPO_PUBLIC_*` vars)
 - [ ] Configure EAS Build profiles (dev / preview / production)
 - [ ] Run dev build on physical iOS and Android devices
 - [ ] Add basic folder structure: `app/`, `features/`, `lib/`, `components/`, `db/`
 
-**Done when:** a blank app boots on iOS + Android, hits Supabase, and reports a test error to Sentry.
+**Done when:** a blank app boots on iOS + Android and hits Supabase.
 
 ---
 
@@ -231,7 +230,7 @@ Goal: validate the app with the real shop in mind, fix what breaks, ship to stor
 - [ ] Switch PayMongo to live keys
 - [ ] App Store submission (TestFlight first → public release) — allow a few days' buffer; first submissions often bounce
 - [ ] Play Store submission (internal track first → public release) — same buffer
-- [ ] Set up basic analytics (Supabase logs + Sentry; add PostHog if needed)
+- [ ] Set up basic analytics (Supabase logs; add PostHog if needed)
 - [ ] Monitor first 2 weeks closely; daily checks
 
 **Done when:** real customers are booking through the live app and the shop is operating from it.

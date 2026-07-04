@@ -12,7 +12,6 @@ import {
 
 import { supabase } from '@/lib/supabase';
 import { supabaseConfigured } from '@/lib/env';
-import { Sentry } from '@/lib/sentry';
 
 import { fetchCustomer, type Customer } from './customer';
 
@@ -62,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (loadId !== customerLoadId.current) return;
       // A missing row right after signup is expected (trigger may lag); leave
       // null and let a later refresh pick it up. Report anything unexpected.
-      Sentry.captureException(e);
+      console.error(e);
       setCustomer(null);
     }
   }, []);
@@ -80,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((e) => {
         // Cold-start network failure: don't strand the app on the splash.
-        Sentry.captureException(e);
+        console.error(e);
         if (active) {
           setSession(null);
           setCustomer(null);

@@ -10,7 +10,7 @@ and [`tech-stack.md`](./tech-stack.md) for the full plan.
 
 React Native + Expo (Expo Router, TypeScript) · Supabase (Postgres, Auth,
 Storage, Edge Functions) · NativeWind · TanStack Query + Zustand · PayMongo ·
-Resend · Sentry.
+Resend.
 
 ## Getting started
 
@@ -26,11 +26,10 @@ Only `EXPO_PUBLIC_*` values belong in `.env` — they are inlined into the app
 bundle. **Never** put secrets (Supabase service-role key, PayMongo secret key,
 Resend/SMS keys) here; those live in Supabase edge-function secrets.
 
-| Var                             | Where to get it                             |
-| ------------------------------- | ------------------------------------------- |
-| `EXPO_PUBLIC_SUPABASE_URL`      | Supabase → Project Settings → API           |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API           |
-| `EXPO_PUBLIC_SENTRY_DSN`        | Sentry → Project Settings (optional in dev) |
+| Var                             | Where to get it                   |
+| ------------------------------- | --------------------------------- |
+| `EXPO_PUBLIC_SUPABASE_URL`      | Supabase → Project Settings → API |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API |
 
 The app boots without `.env`; the home screen shows connection status so you can
 verify each service once its keys are in.
@@ -70,7 +69,7 @@ src/
   app/         Expo Router routes (file-based)
   components/  Shared UI
   features/    Feature modules (auth, catalog, booking, …)
-  lib/         Clients & config (supabase, sentry, env)
+  lib/         Clients & config (supabase, env)
   db/          SQL migrations / schema
   hooks/       Shared hooks
   constants/   Theme & constants

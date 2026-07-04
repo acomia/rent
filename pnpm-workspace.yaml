@@ -1,3 +1,2 @@
 allowBuilds:
-  '@sentry/cli': true
   unrs-resolver: true

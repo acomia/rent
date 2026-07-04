@@ -14,9 +14,7 @@ import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
-import { initSentry, Sentry } from '@/lib/sentry';
 
-initSentry();
 SplashScreen.preventAutoHideAsync();
 
 // Screens a signed-in-but-not-finished user is allowed to stay on inside the
@@ -73,4 +71,4 @@ function RootLayout() {
   );
 }
 
-export default Sentry.wrap(RootLayout);
+export default RootLayout;
