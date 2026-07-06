@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "Rent",
-    "slug": "rent",
+    "name": "Hiramda",
+    "slug": "hiramda",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "rent",
+    "scheme": "hiramda",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.arnancomia.rent"
+      "bundleIdentifier": "com.arnancomia.hiramda"
     },
     "android": {
-      "package": "com.arnancomia.rent",
+      "package": "com.arnancomia.hiramda",
       "adaptiveIcon": {
         "backgroundColor": "#EDE7FA",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

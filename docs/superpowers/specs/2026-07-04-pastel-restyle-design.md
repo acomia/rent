@@ -1,4 +1,4 @@
-# Rent — Pastel Restyle (Design Spec)
+# Hiramda — Pastel Restyle (Design Spec)
 
 **Date:** 2026-07-04
 **Status:** Approved — implementing
@@ -6,7 +6,7 @@
 
 ## Goal
 
-Restyle the existing **Rent** app (Expo Router + NativeWind, a gown/costume rental app) to match the reference design system, and build out the catalog screens the reference shows (search, category listing, product detail) as static/mock UI. Keep light **and** dark mode.
+Restyle the existing **Hiramda** app (Expo Router + NativeWind, a gown/costume rental app) to match the reference design system, and build out the catalog screens the reference shows (search, category listing, product detail) as static/mock UI. Keep light **and** dark mode.
 
 ## Decisions (confirmed with user)
 
