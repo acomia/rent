@@ -29,6 +29,11 @@ export const signupSchema = z
     phone: phField,
     password,
     confirmPassword: z.string(),
+    // 'admin' only becomes an actual admin if the invite code checks out
+    // server-side (see src/db/0009_admin_invite_codes.sql); the picker itself
+    // grants nothing.
+    role: z.enum(['customer', 'admin']),
+    inviteCode: z.string().trim().max(100),
     acceptedTerms: z
       .boolean()
       .refine((v) => v === true, 'Please accept the Terms & Privacy Policy'),
@@ -36,6 +41,10 @@ export const signupSchema = z
   .refine((d) => d.password === d.confirmPassword, {
     path: ['confirmPassword'],
     message: 'Passwords do not match',
+  })
+  .refine((d) => d.role !== 'admin' || d.inviteCode.length > 0, {
+    path: ['inviteCode'],
+    message: 'Enter your shop invite code',
   });
 
 export const loginSchema = z.object({

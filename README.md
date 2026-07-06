@@ -69,7 +69,7 @@ Auth needs one-time setup in the Supabase dashboard before signup/login work:
 
 ### Backend setup (Phase 3 — Admin catalog)
 
-The admin catalog management area needs three migrations and one manual step:
+The admin catalog management area needs the migrations plus one way to create an admin:
 
 1. **Run the migrations** in order in the SQL editor (or `supabase db push`):
    - [`src/db/0006_admins.sql`](./src/db/0006_admins.sql) — `admins` table, the
@@ -78,18 +78,31 @@ The admin catalog management area needs three migrations and one manual step:
      `admin_audit_log` + DB triggers that record every catalog mutation.
    - [`src/db/0008_storage_item_photos.sql`](./src/db/0008_storage_item_photos.sql) —
      the public-read `item-photos` Storage bucket + admin-only write policies.
-2. **Make the first admin by hand.** There is no in-app path to create the first
-   admin (chicken-and-egg: writing to `admins` requires being an admin). In the
-   Supabase dashboard, find the user's id under **Auth → Users**, then in the SQL
-   editor run:
+   - [`src/db/0009_admin_invite_codes.sql`](./src/db/0009_admin_invite_codes.sql) —
+     `admin_invite_codes` + the invite-gated signup trigger + verify RPC.
+2. **Create an admin.** Two options:
 
-   ```sql
-   insert into public.admins (id) values ('<auth-user-uuid>');
-   ```
+   - **Invite code (in-app):** mint a code, then sign up choosing **Shop** and
+     entering it. The signup trigger creates the admin row only for a valid,
+     active code (an invalid code fails the signup). Mint one with a long, random
+     value — it is a shared secret:
 
-   That account will then see an **Admin** entry on its Profile screen. Additional
-   admins can be added the same way (the owner/staff `role` column defaults to
-   `owner`; the staff split is a later phase).
+     ```sql
+     insert into public.admin_invite_codes (code, role, note)
+     values ('<LONG-RANDOM-STRING>', 'owner', 'shop owner');
+     ```
+
+     Revoke a code by setting `active = false`. Codes are reusable while active.
+
+   - **By hand (bootstrap):** insert the `admins` row directly for a user id from
+     **Auth → Users**:
+
+     ```sql
+     insert into public.admins (id) values ('<auth-user-uuid>');
+     ```
+
+   Either way the account then sees an **Admin** entry on its Profile screen. The
+   owner/staff `role` defaults to `owner`; the staff split is a later phase.
 
 > Photo upload adds the native `expo-image-picker` module, so after pulling this
 > phase you must **rebuild the dev client** (`pnpm ios` / `pnpm android`) — a JS
