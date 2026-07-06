@@ -18,11 +18,12 @@ import type {
   ItemUnit,
 } from '@/features/catalog/types';
 
-// Columns selected for an item, with its physical units embedded.
-const ITEM_SELECT =
+// Columns selected for an item, with its physical units embedded. Exported so
+// the admin data layer (features/admin/api.ts) reuses the same select + mapping.
+export const ITEM_SELECT =
   'id,name,brand,category_slug,gender,rental_fee_per_day,deposit,' +
   'cleaning_buffer_days,description,occasion,swatches,photos,icon,tint,' +
-  'item_units(id,size,color,status)';
+  'is_active,item_units(id,size,color,status)';
 
 type UnitRow = {
   id: string;
@@ -31,7 +32,7 @@ type UnitRow = {
   status: ItemUnit['status'];
 };
 
-type ItemRow = {
+export type ItemRow = {
   id: string;
   name: string;
   brand: string | null;
@@ -46,6 +47,7 @@ type ItemRow = {
   photos: string[] | null;
   icon: string;
   tint: Item['tint'];
+  is_active: boolean;
   item_units: UnitRow[] | null;
 };
 
@@ -58,7 +60,7 @@ function mapUnit(row: UnitRow): ItemUnit {
   };
 }
 
-function mapItem(row: ItemRow): Item {
+export function mapItem(row: ItemRow): Item {
   const units = (row.item_units ?? []).map(mapUnit);
   // Distinct sizes that a customer could actually rent right now.
   const sizes = [
@@ -83,6 +85,7 @@ function mapItem(row: ItemRow): Item {
     photos: row.photos ?? [],
     occasion: row.occasion ?? [],
     description: row.description ?? '',
+    isActive: row.is_active,
     units,
     sizes,
   };

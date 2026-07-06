@@ -82,16 +82,16 @@ Goal: customer can browse, search, filter, and view item details.
 
 Goal: admin can add and manage items without engineering help.
 
-- [ ] Decide admin roles (Open Item #8) — single admin vs. owner/staff split
-- [ ] Create `admins` table + RLS policies
-- [ ] Build admin login (separate entry or role check on shared login)
-- [ ] Build admin home / dashboard shell (empty for now)
-- [ ] Build "Manage Items" list screen
-- [ ] Build add/edit item form (with Zod validation)
-- [ ] Build photo upload (multi-photo, reorder, delete) → Supabase Storage
-- [ ] Build category management screen (add / edit / delete categories)
-- [ ] Build inventory status toggle (available / unavailable / damaged / under cleaning)
-- [ ] Add audit log writes on every admin mutation
+- [x] Decide admin roles (Open Item #8) — **decided: single role for v1** (`admins` table, presence = admin). Nullable `role` defaults to `owner` so an owner/staff split bolts on later with no migration.
+- [x] Create `admins` table + RLS policies — `src/db/0006_admins.sql` (+ `is_admin()` helper + admin write policies on catalog tables)
+- [x] Build admin login (separate entry or role check on shared login) — **role check on shared login**; `isAdmin` on the auth context, `AdminGate` in `src/app/(app)/admin/_layout.tsx`, entry from the Profile screen
+- [x] Build admin home / dashboard shell (empty for now) — `src/app/(app)/admin/index.tsx` (link cards + counts)
+- [x] Build "Manage Items" list screen — `src/app/(app)/admin/items/index.tsx` (includes inactive items)
+- [x] Build add/edit item form (with Zod validation) — `src/app/(app)/admin/items/[id].tsx` (react-hook-form + `itemSchema`)
+- [x] Build photo upload (multi-photo, reorder, delete) → Supabase Storage — `expo-image-picker` → `item-photos` bucket (`src/db/0008_storage_item_photos.sql`)
+- [x] Build category management screen (add / edit / delete categories) — `src/app/(app)/admin/categories/` (delete FK-guarded)
+- [x] Build inventory status toggle (available / unavailable / damaged / under cleaning) — per-unit status chips in the item form
+- [x] Add audit log writes on every admin mutation — DB triggers (`src/db/0007_admin_audit_log.sql`), not client code
 
 **Done when:** an admin can fully populate and maintain the catalog on the phone.
 

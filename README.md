@@ -67,6 +67,34 @@ Auth needs one-time setup in the Supabase dashboard before signup/login work:
    Without `{{ .Token }}` in the template, the reset screen has no code to enter
    and the flow cannot complete.
 
+### Backend setup (Phase 3 — Admin catalog)
+
+The admin catalog management area needs three migrations and one manual step:
+
+1. **Run the migrations** in order in the SQL editor (or `supabase db push`):
+   - [`src/db/0006_admins.sql`](./src/db/0006_admins.sql) — `admins` table, the
+     `is_admin()` helper, and admin-only write policies on the catalog tables.
+   - [`src/db/0007_admin_audit_log.sql`](./src/db/0007_admin_audit_log.sql) —
+     `admin_audit_log` + DB triggers that record every catalog mutation.
+   - [`src/db/0008_storage_item_photos.sql`](./src/db/0008_storage_item_photos.sql) —
+     the public-read `item-photos` Storage bucket + admin-only write policies.
+2. **Make the first admin by hand.** There is no in-app path to create the first
+   admin (chicken-and-egg: writing to `admins` requires being an admin). In the
+   Supabase dashboard, find the user's id under **Auth → Users**, then in the SQL
+   editor run:
+
+   ```sql
+   insert into public.admins (id) values ('<auth-user-uuid>');
+   ```
+
+   That account will then see an **Admin** entry on its Profile screen. Additional
+   admins can be added the same way (the owner/staff `role` column defaults to
+   `owner`; the staff split is a later phase).
+
+> Photo upload adds the native `expo-image-picker` module, so after pulling this
+> phase you must **rebuild the dev client** (`pnpm ios` / `pnpm android`) — a JS
+> reload is not enough.
+
 ## Scripts
 
 | Command                     | Does                                   |

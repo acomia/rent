@@ -12,6 +12,8 @@ import {
 
 import { supabase } from '@/lib/supabase';
 import { supabaseConfigured } from '@/lib/env';
+import { fetchAdmin } from '@/features/admin/api';
+import type { Admin } from '@/features/admin/types';
 
 import { fetchCustomer, type Customer } from './customer';
 
@@ -23,6 +25,10 @@ type AuthState = {
   session: Session | null;
   user: User | null;
   customer: Customer | null;
+  /** The admin row for the current user, or null if they are not an admin. */
+  admin: Admin | null;
+  /** Convenience flag: true when the signed-in user has an `admins` row. */
+  isAdmin: boolean;
   /** Whether the user has completed phone-OTP verification. */
   phoneVerified: boolean;
   /** DEV-ONLY: true when auth has been bypassed for local demo (no real session). */
@@ -41,12 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(Boolean(supabase));
   const [session, setSession] = useState<Session | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [admin, setAdmin] = useState<Admin | null>(null);
   const [devBypass, setDevBypass] = useState(false);
 
   const user = session?.user ?? null;
   // Guards against a stale fetch (from a previous user/session) committing after
   // a newer load has started — e.g. sign-out or account switch mid-flight.
   const customerLoadId = useRef(0);
+  const adminLoadId = useRef(0);
 
   const loadCustomer = useCallback(async (userId: string | undefined) => {
     const loadId = ++customerLoadId.current;
@@ -66,6 +74,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Admin status resolves alongside the customer. `fetchAdmin` swallows the
+  // "no row / not visible" case to null, so a non-admin simply lands on null.
+  const loadAdmin = useCallback(async (userId: string | undefined) => {
+    const loadId = ++adminLoadId.current;
+    if (!userId) {
+      setAdmin(null);
+      return;
+    }
+    const next = await fetchAdmin(userId);
+    if (loadId === adminLoadId.current) setAdmin(next);
+  }, []);
+
   useEffect(() => {
     if (!supabase) return;
     let active = true;
@@ -75,7 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(({ data }) => {
         if (!active) return;
         setSession(data.session);
-        return loadCustomer(data.session?.user.id);
+        return Promise.all([
+          loadCustomer(data.session?.user.id),
+          loadAdmin(data.session?.user.id),
+        ]);
       })
       .catch((e) => {
         // Cold-start network failure: don't strand the app on the splash.
@@ -83,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (active) {
           setSession(null);
           setCustomer(null);
+          setAdmin(null);
         }
       })
       .finally(() => {
@@ -92,13 +116,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);
       loadCustomer(next?.user.id);
+      loadAdmin(next?.user.id);
     });
 
     return () => {
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, [loadCustomer]);
+  }, [loadCustomer, loadAdmin]);
 
   const refreshCustomer = useCallback(
     () => loadCustomer(session?.user.id),
@@ -111,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     setDevBypass(false);
+    setAdmin(null);
     await supabase?.auth.signOut();
   }, []);
 
@@ -121,6 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user,
       customer,
+      admin,
+      isAdmin: Boolean(admin),
       phoneVerified: Boolean(user?.phone_confirmed_at),
       devBypass,
       enableDevBypass,
@@ -132,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user,
       customer,
+      admin,
       devBypass,
       enableDevBypass,
       refreshCustomer,
