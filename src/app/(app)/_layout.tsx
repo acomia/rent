@@ -6,9 +6,7 @@ export default function AppLayout() {
   return (
     <CartProvider>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="profile" />
-        <Stack.Screen name="search" />
+        <Stack.Screen name="(tabs)" />
         <Stack.Screen name="category/[slug]" />
         <Stack.Screen name="product/[id]" />
       </Stack>

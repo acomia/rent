@@ -19,7 +19,7 @@ export default function Login() {
 
   function handleDevBypass() {
     enableDevBypass();
-    replace('/(app)');
+    replace('/(app)/(tabs)');
   }
 
   const {

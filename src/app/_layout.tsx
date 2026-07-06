@@ -61,7 +61,7 @@ function AuthGate() {
       inAuthGroup &&
       !SESSION_ALLOWED_AUTH_SCREENS.has(screen ?? '')
     ) {
-      replace('/(app)');
+      replace('/(app)/(tabs)');
     }
   }, [loading, authed, segments, replace]);
 

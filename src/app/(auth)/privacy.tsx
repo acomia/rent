@@ -4,7 +4,7 @@ export default function Privacy() {
   return (
     <LegalDoc
       title="Privacy Policy"
-      intro="This policy explains what personal data Rent collects and how it is used, in line with the Philippine Data Privacy Act."
+      intro="This policy explains what personal data Hiramda collects and how it is used, in line with the Philippine Data Privacy Act."
       sections={[
         {
           heading: 'What we collect',

@@ -4,7 +4,7 @@ export default function Terms() {
   return (
     <LegalDoc
       title="Terms & Conditions"
-      intro="These terms govern your use of Rent to reserve gowns and costumes. By creating an account you agree to them."
+      intro="These terms govern your use of Hiramda to reserve gowns and costumes. By creating an account you agree to them."
       sections={[
         {
           heading: 'Reservations & deposits',

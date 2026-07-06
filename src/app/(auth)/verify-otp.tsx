@@ -82,7 +82,7 @@ export default function VerifyOtp() {
       return;
     }
     await refreshCustomer();
-    replace('/(app)');
+    replace('/(app)/(tabs)');
   }
 
   return (
@@ -145,7 +145,7 @@ export default function VerifyOtp() {
         <Button
           label="Skip verification (dev only)"
           variant="outline"
-          onPress={() => replace('/(app)')}
+          onPress={() => replace('/(app)/(tabs)')}
         />
       ) : null}
 

@@ -28,13 +28,6 @@ export const CATEGORIES: Category[] = [
     tint: 'blush',
     count: 3,
   },
-  {
-    slug: 'bags',
-    name: 'Bags',
-    icon: 'bag-personal-outline',
-    tint: 'sky',
-    count: 2,
-  },
   { slug: 'shoes', name: 'Shoes', icon: 'shoe-heel', tint: 'butter', count: 2 },
   {
     slug: 'accessories',
@@ -50,6 +43,12 @@ export const CATEGORIES: Category[] = [
 const APPAREL_SIZES = ['XS', 'S', 'M', 'L'];
 const NO_SIZE: string[] = [];
 
+// Curated real product photos for the offline demo. `img` builds a mobile-sized
+// Unsplash CDN URL; the same URLs seed the DB (see 0003_seed_catalog.sql), so
+// the offline and Supabase paths look identical.
+const img = (id: string) =>
+  `https://images.unsplash.com/${id}?w=800&q=80&auto=format&fit=crop`;
+
 export const PRODUCTS: Item[] = [
   {
     id: 'g1',
@@ -63,7 +62,10 @@ export const PRODUCTS: Item[] = [
     tint: 'lilac',
     icon: 'hanger',
     swatches: ['#8165CA', '#EDE7FA', '#1A1523'],
-    photos: [],
+    photos: [
+      img('photo-1566174053879-31528523f8ae'),
+      img('photo-1490481651871-ab68de25d43d'),
+    ],
     occasion: ['wedding', 'debut'],
     units: [],
     sizes: APPAREL_SIZES,
@@ -82,7 +84,10 @@ export const PRODUCTS: Item[] = [
     tint: 'blush',
     icon: 'hanger',
     swatches: ['#ED5C9D', '#FCE0EC', '#FDF1AA'],
-    photos: [],
+    photos: [
+      img('photo-1596783074918-c84cb06531ca'),
+      img('photo-1515372039744-b8f02a3ae446'),
+    ],
     occasion: ['formal', 'debut'],
     units: [],
     sizes: APPAREL_SIZES,
@@ -101,7 +106,10 @@ export const PRODUCTS: Item[] = [
     tint: 'sky',
     icon: 'hanger',
     swatches: ['#0F766E', '#D2EDF6', '#1A1523'],
-    photos: [],
+    photos: [
+      img('photo-1595777457583-95e059d581b8'),
+      img('photo-1519741497674-611481863552'),
+    ],
     occasion: ['formal', 'wedding'],
     units: [],
     sizes: ['S', 'M', 'L'],
@@ -120,7 +128,10 @@ export const PRODUCTS: Item[] = [
     tint: 'blush',
     icon: 'drama-masks',
     swatches: ['#8165CA', '#FDF1AA', '#1A1523'],
-    photos: [],
+    photos: [
+      img('photo-1469334031218-e382a71b716b'),
+      img('photo-1566174053879-31528523f8ae'),
+    ],
     occasion: ['cosplay'],
     units: [],
     sizes: ['S', 'M', 'L'],
@@ -139,7 +150,10 @@ export const PRODUCTS: Item[] = [
     tint: 'butter',
     icon: 'tshirt-crew-outline',
     swatches: ['#FDF1AA', '#F7F6FB', '#1A1523'],
-    photos: [],
+    photos: [
+      img('photo-1602810318383-e386cc2a3ccf'),
+      img('photo-1594938298603-c8148c4dae35'),
+    ],
     occasion: ['formal', 'wedding'],
     units: [],
     sizes: ['S', 'M', 'L', 'XL'],
@@ -158,49 +172,14 @@ export const PRODUCTS: Item[] = [
     tint: 'sky',
     icon: 'drama-masks',
     swatches: ['#ED5C9D', '#FDF1AA', '#1A1523'],
-    photos: [],
+    photos: [
+      img('photo-1469334031218-e382a71b716b'),
+      img('photo-1515372039744-b8f02a3ae446'),
+    ],
     occasion: ['cosplay'],
     units: [],
     sizes: ['S', 'M', 'L'],
     description: 'A fringed 1920s flapper with headpiece. Every step shimmers.',
-  },
-  {
-    id: 'b1',
-    name: 'Crystal Clutch',
-    designer: 'Aranáz',
-    category: 'bags',
-    gender: 'women',
-    pricePerDay: 600,
-    deposit: 1000,
-    cleaningBufferDays: 1,
-    tint: 'sky',
-    icon: 'bag-personal-outline',
-    swatches: ['#D2EDF6', '#8165CA', '#F7F6FB'],
-    photos: [],
-    occasion: ['formal', 'wedding'],
-    units: [],
-    sizes: NO_SIZE,
-    description:
-      'A crystal-embellished evening clutch that catches every light in the room.',
-  },
-  {
-    id: 'b2',
-    name: 'Woven Top Handle',
-    designer: 'Zarah',
-    category: 'bags',
-    gender: 'women',
-    pricePerDay: 500,
-    deposit: 800,
-    cleaningBufferDays: 1,
-    tint: 'butter',
-    icon: 'bag-personal-outline',
-    swatches: ['#FDF1AA', '#1A1523', '#F7F6FB'],
-    photos: [],
-    occasion: ['formal'],
-    units: [],
-    sizes: NO_SIZE,
-    description:
-      'A structured woven top-handle bag — daytime formal that never tries too hard.',
   },
   {
     id: 's1',
@@ -214,7 +193,10 @@ export const PRODUCTS: Item[] = [
     tint: 'butter',
     icon: 'shoe-heel',
     swatches: ['#FDF1AA', '#EDE7FA', '#1A1523'],
-    photos: [],
+    photos: [
+      img('photo-1543163521-1bf539c55dd2'),
+      img('photo-1596703263926-eb0762ee17e4'),
+    ],
     occasion: ['formal', 'debut'],
     units: [],
     sizes: ['36', '37', '38', '39'],
@@ -233,7 +215,10 @@ export const PRODUCTS: Item[] = [
     tint: 'sky',
     icon: 'shoe-formal',
     swatches: ['#1A1523', '#D2EDF6', '#F7F6FB'],
-    photos: [],
+    photos: [
+      img('photo-1449505278894-297fdb3edbc1'),
+      img('photo-1560343090-f0409e92791a'),
+    ],
     occasion: ['formal'],
     units: [],
     sizes: ['41', '42', '43'],
@@ -252,7 +237,10 @@ export const PRODUCTS: Item[] = [
     tint: 'lilac',
     icon: 'necklace',
     swatches: ['#EDE7FA', '#ED5C9D', '#F7F6FB'],
-    photos: [],
+    photos: [
+      img('photo-1515562141207-7a88fb7ce338'),
+      img('photo-1599643478518-a784e5dc4c8f'),
+    ],
     occasion: ['wedding', 'debut'],
     units: [],
     sizes: NO_SIZE,
@@ -271,7 +259,10 @@ export const PRODUCTS: Item[] = [
     tint: 'blush',
     icon: 'sunglasses',
     swatches: ['#1A1523', '#FCE0EC', '#F7F6FB'],
-    photos: [],
+    photos: [
+      img('photo-1594938298603-c8148c4dae35'),
+      img('photo-1614252369475-531eba835eb1'),
+    ],
     occasion: ['formal'],
     units: [],
     sizes: NO_SIZE,

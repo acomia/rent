@@ -12,8 +12,7 @@ export type Gender = 'women' | 'men';
 
 export type Tint = 'lilac' | 'sky' | 'blush' | 'butter';
 
-export type CategorySlug =
-  'gowns' | 'costumes' | 'bags' | 'shoes' | 'accessories';
+export type CategorySlug = 'gowns' | 'costumes' | 'shoes' | 'accessories';
 
 export type Occasion = 'wedding' | 'debut' | 'formal' | 'cosplay' | 'school';
 
