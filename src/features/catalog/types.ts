@@ -71,6 +71,12 @@ export type Item = {
   photos: string[];
   occasion: Occasion[];
   description: string;
+  /**
+   * Whether the item is shown in the customer catalog. Optional because the
+   * customer fetchers only ever return active items (and the mock data omits
+   * it) — the admin list is the only consumer that distinguishes the two.
+   */
+  isActive?: boolean;
   /** Physical copies; populated from the DB, empty in the mock fallback. */
   units: ItemUnit[];
   /** Distinct sizes available across units — the size chips on detail + filter. */

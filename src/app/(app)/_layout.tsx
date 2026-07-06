@@ -9,6 +9,7 @@ export default function AppLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="category/[slug]" />
         <Stack.Screen name="product/[id]" />
+        <Stack.Screen name="admin" />
       </Stack>
     </CartProvider>
   );

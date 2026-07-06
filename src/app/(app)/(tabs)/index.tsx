@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { useBottomTabBarHeight } from 'expo-router/js-tabs';
 import { useRouter } from 'expo-router';
+import { useBottomTabBarHeight } from 'expo-router/js-tabs';
 import { useState } from 'react';
 import {
   Pressable,
@@ -169,24 +169,6 @@ export default function Home() {
               </View>
             ))
           )}
-          {rows.map((row, i) => (
-            <View key={i} className="flex-row gap-4">
-              {row.map((category) => (
-                <CategoryTile
-                  key={category.slug}
-                  category={category}
-                  count={category.count}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/(app)/category/[slug]',
-                      params: { slug: category.slug, gender },
-                    })
-                  }
-                />
-              ))}
-              {row.length === 1 ? <View className="flex-1" /> : null}
-            </View>
-          ))}
         </View>
       </Animated.ScrollView>
 

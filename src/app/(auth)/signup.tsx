@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from 'expo-router';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Pressable, Text, View } from 'react-native';
 
+import { SegmentedToggle } from '@/components/catalog/segmented-toggle';
 import { AuthScreen } from '@/components/ui/auth-screen';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
@@ -31,9 +32,15 @@ export default function Signup() {
       phone: '',
       password: '',
       confirmPassword: '',
+      role: 'customer',
+      inviteCode: '',
       acceptedTerms: false,
     },
   });
+
+  // Drives whether the invite-code field is shown. `useWatch` (not `watch()`)
+  // so the React Compiler tracks it safely.
+  const role = useWatch({ control, name: 'role' });
 
   async function onSubmit(values: SignupForm) {
     if (!supabase) {
@@ -43,6 +50,26 @@ export default function Signup() {
       return;
     }
     const phone = normalizePhone(values.phone);
+    const inviteCode = values.inviteCode.trim();
+
+    // Shop signups must present a valid invite code. Pre-check it so the user
+    // gets a clean inline error; the DB trigger re-checks it server-side and is
+    // the actual gate that provisions the admin row.
+    if (values.role === 'admin') {
+      const { data: valid, error: rpcError } = await supabase.rpc(
+        'verify_admin_invite_code',
+        { invite_code: inviteCode },
+      );
+      if (rpcError) {
+        setError('root', { message: rpcError.message });
+        return;
+      }
+      if (!valid) {
+        setError('inviteCode', { message: 'Invalid or inactive invite code' });
+        return;
+      }
+    }
+
     const { error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
@@ -52,6 +79,7 @@ export default function Signup() {
           phone_number: phone,
           terms_version: TERMS_VERSION,
           accepted_terms: true,
+          admin_invite_code: values.role === 'admin' ? inviteCode : undefined,
         },
       },
     });
@@ -71,6 +99,45 @@ export default function Signup() {
         <Text className="rounded-xl bg-amber-500/15 px-4 py-3 font-sans text-sm text-amber-700 dark:text-amber-400">
           Supabase keys are missing from .env — signup will not work yet.
         </Text>
+      ) : null}
+
+      <Controller
+        control={control}
+        name="role"
+        render={({ field: { onChange, value } }) => (
+          <View className="gap-2">
+            <Text className="font-sans-medium text-sm text-ink dark:text-cloud">
+              I am signing up as
+            </Text>
+            <SegmentedToggle
+              options={[
+                { label: 'Customer', value: 'customer' },
+                { label: 'Shop', value: 'admin' },
+              ]}
+              value={value}
+              onChange={onChange}
+            />
+          </View>
+        )}
+      />
+
+      {role === 'admin' ? (
+        <Controller
+          control={control}
+          name="inviteCode"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextField
+              label="Shop invite code"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={errors.inviteCode?.message}
+              hint="Provided by the shop. Required to manage the catalog."
+              autoCapitalize="characters"
+              autoCorrect={false}
+            />
+          )}
+        />
       ) : null}
 
       <Controller

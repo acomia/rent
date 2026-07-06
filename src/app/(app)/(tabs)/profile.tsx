@@ -29,8 +29,8 @@ export default function Profile() {
 
 function ProfileForm({ customer }: { customer: Customer }) {
   const insets = useSafeAreaInsets();
-  const { replace, back } = useRouter();
-  const { user, phoneVerified, refreshCustomer, signOut } = useAuth();
+  const { replace, back, push } = useRouter();
+  const { user, phoneVerified, isAdmin, refreshCustomer, signOut } = useAuth();
 
   const [fullName, setFullName] = useState(customer.full_name ?? '');
   const [phone, setPhone] = useState(customer.phone_number ?? '');
@@ -149,6 +149,17 @@ function ProfileForm({ customer }: { customer: Customer }) {
               Phone verification
             </ListItem>
           </FieldGroup.Section>
+
+          {isAdmin ? (
+            <FieldGroup.Section title="Shop">
+              <ListItem
+                supportingText="Manage catalog & inventory"
+                onPress={() => push('/(app)/admin')}
+              >
+                Admin
+              </ListItem>
+            </FieldGroup.Section>
+          ) : null}
 
           <FieldGroup.Section>
             <ListItem onPress={onSignOut}>Sign out</ListItem>
