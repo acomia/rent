@@ -3,7 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import {
   ActivityIndicator,
@@ -17,29 +17,30 @@ import {
 
 import { AdminHeader } from '@/components/admin/admin-header';
 import { Chip } from '@/components/admin/chip';
-import { GRAPE, tintAccent } from '@/components/catalog/catalog-style';
-import { Glyph } from '@/components/catalog/glyph';
+import { Field } from '@/components/admin/field';
+import { IconPicker } from '@/components/admin/icon-picker';
+import { TintPicker } from '@/components/admin/tint-picker';
+import { GRAPE } from '@/components/catalog/catalog-style';
 import { SegmentedToggle } from '@/components/catalog/segmented-toggle';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
-import { deleteItemPhoto, uploadItemPhoto } from '@/features/admin/api';
 import {
   useCreateItem,
   useDeleteItem,
+  useDeleteItemPhoto,
   useUpdateItem,
+  useUploadItemPhotos,
 } from '@/features/admin/hooks';
 import {
   GENDERS,
-  ICON_OPTIONS,
   itemSchema,
-  TINTS,
   UNIT_STATUS_LABELS,
   UNIT_STATUSES,
   type ItemFormInput,
   type ItemFormValues,
 } from '@/features/admin/schemas';
 import { useCategories, useItem } from '@/features/catalog/hooks';
-import { OCCASIONS, type Item, type Tint } from '@/features/catalog/types';
+import { OCCASIONS, type Item } from '@/features/catalog/types';
 
 const EMPTY_FORM: ItemFormInput = {
   name: '',
@@ -84,18 +85,6 @@ function itemToForm(item: Item): ItemFormInput {
   };
 }
 
-/** Section wrapper: a labelled block with consistent spacing. */
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View className="gap-2">
-      <Text className="font-sans-medium text-sm text-ink dark:text-cloud">
-        {label}
-      </Text>
-      {children}
-    </View>
-  );
-}
-
 export default function AdminItemForm() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isNew = id === 'new';
@@ -106,6 +95,8 @@ export default function AdminItemForm() {
   const create = useCreateItem();
   const update = useUpdateItem(id);
   const del = useDeleteItem();
+  const uploadPhotos = useUploadItemPhotos();
+  const deletePhoto = useDeleteItemPhoto();
 
   const {
     control,
@@ -124,7 +115,6 @@ export default function AdminItemForm() {
   // `useWatch` (not `watch()`) so the React Compiler can track them safely.
   const photos = useWatch({ control, name: 'photos' });
   const occasion = useWatch({ control, name: 'occasion' });
-  const [uploading, setUploading] = useState(false);
 
   // Seed the form once the existing item has loaded (edit mode).
   useEffect(() => {
@@ -172,25 +162,20 @@ export default function AdminItemForm() {
       quality: 0.8,
     });
     if (result.canceled) return;
-    setUploading(true);
     try {
-      const uploaded: string[] = [];
-      for (const asset of result.assets) {
-        const url = await uploadItemPhoto(
-          asset.uri,
-          asset.mimeType ?? 'image/jpeg',
-          isNew ? undefined : id,
-        );
-        uploaded.push(url);
-      }
+      const uploaded = await uploadPhotos.mutateAsync({
+        assets: result.assets.map((asset) => ({
+          uri: asset.uri,
+          mimeType: asset.mimeType,
+        })),
+        itemId: isNew ? undefined : id,
+      });
       setValue('photos', [...photos, ...uploaded], { shouldDirty: true });
     } catch (e) {
       Alert.alert(
         'Upload failed',
         e instanceof Error ? e.message : 'Please try again.',
       );
-    } finally {
-      setUploading(false);
     }
   }
 
@@ -201,7 +186,7 @@ export default function AdminItemForm() {
       { shouldDirty: true },
     );
     // Best-effort storage cleanup; ignore failures (the URL is already gone).
-    deleteItemPhoto(url).catch(() => {});
+    deletePhoto.mutate(url);
   }
 
   function movePhoto(index: number, dir: -1 | 1) {
@@ -302,10 +287,10 @@ export default function AdminItemForm() {
               accessibilityRole="button"
               accessibilityLabel="Add photos"
               onPress={onAddPhotos}
-              disabled={uploading}
+              disabled={uploadPhotos.isPending}
               className="h-28 w-24 items-center justify-center gap-1 rounded-2xl border border-dashed border-grape/40 dark:border-cloud/30"
             >
-              {uploading ? (
+              {uploadPhotos.isPending ? (
                 <ActivityIndicator color={GRAPE} />
               ) : (
                 <>
@@ -482,38 +467,12 @@ export default function AdminItemForm() {
           control={control}
           name="icon"
           render={({ field, fieldState }) => (
-            <Field label="Icon (shown when no photo)">
-              <View className="flex-row flex-wrap gap-2">
-                {ICON_OPTIONS.map((glyph) => {
-                  const selected = field.value === glyph;
-                  return (
-                    <Pressable
-                      key={glyph}
-                      accessibilityRole="button"
-                      accessibilityLabel={glyph}
-                      accessibilityState={{ selected }}
-                      onPress={() => field.onChange(glyph)}
-                      className={`h-12 w-12 items-center justify-center rounded-2xl ${
-                        selected
-                          ? 'bg-grape dark:bg-grape-soft'
-                          : 'bg-canvas-subtle dark:bg-night-800'
-                      }`}
-                    >
-                      <Glyph
-                        name={glyph}
-                        size={22}
-                        color={selected ? '#fff' : '#6E6A7D'}
-                      />
-                    </Pressable>
-                  );
-                })}
-              </View>
-              {fieldState.error ? (
-                <Text className="font-sans text-xs text-red-500">
-                  {fieldState.error.message}
-                </Text>
-              ) : null}
-            </Field>
+            <IconPicker
+              label="Icon (shown when no photo)"
+              value={field.value}
+              onChange={field.onChange}
+              error={fieldState.error?.message}
+            />
           )}
         />
 
@@ -522,30 +481,11 @@ export default function AdminItemForm() {
           control={control}
           name="tint"
           render={({ field }) => (
-            <Field label="Card colour">
-              <View className="flex-row gap-3">
-                {TINTS.map((tint) => {
-                  const selected = field.value === tint;
-                  return (
-                    <Pressable
-                      key={tint}
-                      accessibilityRole="button"
-                      accessibilityLabel={tint}
-                      accessibilityState={{ selected }}
-                      onPress={() => field.onChange(tint)}
-                      className={`h-11 w-11 items-center justify-center rounded-full ${
-                        selected ? 'border-2 border-grape' : ''
-                      }`}
-                      style={{ backgroundColor: tintAccent[tint as Tint] }}
-                    >
-                      {selected ? (
-                        <Feather name="check" size={18} color="#fff" />
-                      ) : null}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </Field>
+            <TintPicker
+              label="Card colour"
+              value={field.value}
+              onChange={field.onChange}
+            />
           )}
         />
 

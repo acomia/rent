@@ -87,10 +87,12 @@ export async function updateCategory(
   v: CategoryFormValues,
 ): Promise<void> {
   const db = requireDb();
-  // Slug is the PK and is not renamed here (would orphan referencing items).
-  const { slug: _slug, ...row } = categoryValuesToRow(v);
-  void _slug;
-  const { error } = await db.from('categories').update(row).eq('slug', slug);
+  // Slug is the PK and is not renamed here (would orphan referencing items); the
+  // form keeps it read-only on edit, so `v.slug` is always already `slug`.
+  const { error } = await db
+    .from('categories')
+    .update(categoryValuesToRow(v))
+    .eq('slug', slug);
   if (error) throw error;
 }
 
@@ -178,16 +180,13 @@ export async function createItem(v: ItemFormValues): Promise<string> {
  */
 export async function updateItem(id: string, v: ItemFormValues): Promise<void> {
   const db = requireDb();
-  const { error } = await db
-    .from('items')
-    .update(itemValuesToRow(v))
-    .eq('id', id);
+  // The row update and the existing-units fetch are independent of each other's
+  // result, so run them concurrently rather than paying two round trips in series.
+  const [{ error }, { data: existing, error: fetchError }] = await Promise.all([
+    db.from('items').update(itemValuesToRow(v)).eq('id', id),
+    db.from('item_units').select('id').eq('item_id', id),
+  ]);
   if (error) throw error;
-
-  const { data: existing, error: fetchError } = await db
-    .from('item_units')
-    .select('id')
-    .eq('item_id', id);
   if (fetchError) throw fetchError;
 
   const keptIds = new Set(v.units.filter((u) => u.id).map((u) => u.id));
@@ -267,6 +266,18 @@ export async function uploadItemPhoto(
   if (error) throw error;
 
   return db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+/** Upload a batch of locally-picked images concurrently; see `uploadItemPhoto`. */
+export async function uploadItemPhotos(
+  assets: { uri: string; mimeType?: string }[],
+  itemId?: string,
+): Promise<string[]> {
+  return Promise.all(
+    assets.map((asset) =>
+      uploadItemPhoto(asset.uri, asset.mimeType ?? 'image/jpeg', itemId),
+    ),
+  );
 }
 
 export async function deleteItemPhoto(publicUrl: string): Promise<void> {

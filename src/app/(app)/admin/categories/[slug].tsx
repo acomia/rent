@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   ActivityIndicator,
@@ -13,18 +12,16 @@ import {
 } from 'react-native';
 
 import { AdminHeader } from '@/components/admin/admin-header';
-import { GRAPE, tintAccent } from '@/components/catalog/catalog-style';
-import { Glyph } from '@/components/catalog/glyph';
+import { IconPicker } from '@/components/admin/icon-picker';
+import { TintPicker } from '@/components/admin/tint-picker';
+import { GRAPE } from '@/components/catalog/catalog-style';
 import { TextField } from '@/components/ui/text-field';
 import { useAdminCategories, useSaveCategory } from '@/features/admin/hooks';
 import {
   categorySchema,
-  ICON_OPTIONS,
-  TINTS,
   type CategoryFormInput,
   type CategoryFormValues,
 } from '@/features/admin/schemas';
-import type { Tint } from '@/features/catalog/types';
 
 const EMPTY_FORM: CategoryFormInput = {
   slug: '',
@@ -33,18 +30,6 @@ const EMPTY_FORM: CategoryFormInput = {
   tint: 'lilac',
   sortOrder: '0',
 };
-
-/** Labelled block, matching the item form's field spacing. */
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View className="gap-2">
-      <Text className="font-sans-medium text-sm text-ink dark:text-cloud">
-        {label}
-      </Text>
-      {children}
-    </View>
-  );
-}
 
 export default function AdminCategoryForm() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -166,38 +151,12 @@ export default function AdminCategoryForm() {
           control={control}
           name="icon"
           render={({ field, fieldState }) => (
-            <Field label="Icon">
-              <View className="flex-row flex-wrap gap-2">
-                {ICON_OPTIONS.map((glyph) => {
-                  const selected = field.value === glyph;
-                  return (
-                    <Pressable
-                      key={glyph}
-                      accessibilityRole="button"
-                      accessibilityLabel={glyph}
-                      accessibilityState={{ selected }}
-                      onPress={() => field.onChange(glyph)}
-                      className={`h-12 w-12 items-center justify-center rounded-2xl ${
-                        selected
-                          ? 'bg-grape dark:bg-grape-soft'
-                          : 'bg-canvas-subtle dark:bg-night-800'
-                      }`}
-                    >
-                      <Glyph
-                        name={glyph}
-                        size={22}
-                        color={selected ? '#fff' : '#6E6A7D'}
-                      />
-                    </Pressable>
-                  );
-                })}
-              </View>
-              {fieldState.error ? (
-                <Text className="font-sans text-xs text-red-500">
-                  {fieldState.error.message}
-                </Text>
-              ) : null}
-            </Field>
+            <IconPicker
+              label="Icon"
+              value={field.value}
+              onChange={field.onChange}
+              error={fieldState.error?.message}
+            />
           )}
         />
 
@@ -205,30 +164,11 @@ export default function AdminCategoryForm() {
           control={control}
           name="tint"
           render={({ field }) => (
-            <Field label="Colour">
-              <View className="flex-row gap-3">
-                {TINTS.map((tint) => {
-                  const selected = field.value === tint;
-                  return (
-                    <Pressable
-                      key={tint}
-                      accessibilityRole="button"
-                      accessibilityLabel={tint}
-                      accessibilityState={{ selected }}
-                      onPress={() => field.onChange(tint)}
-                      className={`h-11 w-11 items-center justify-center rounded-full ${
-                        selected ? 'border-2 border-grape' : ''
-                      }`}
-                      style={{ backgroundColor: tintAccent[tint as Tint] }}
-                    >
-                      {selected ? (
-                        <Feather name="check" size={18} color="#fff" />
-                      ) : null}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </Field>
+            <TintPicker
+              label="Colour"
+              value={field.value}
+              onChange={field.onChange}
+            />
           )}
         />
 

@@ -18,10 +18,12 @@ import {
   createItem,
   deleteCategory,
   deleteItem,
+  deleteItemPhoto,
   fetchAdminCategories,
   fetchAdminItems,
   updateCategory,
   updateItem,
+  uploadItemPhotos,
 } from './api';
 import type { CategoryFormValues, ItemFormValues } from './schemas';
 
@@ -76,6 +78,26 @@ export function useDeleteItem() {
     mutationFn: ({ id, photoUrls }: { id: string; photoUrls?: string[] }) =>
       deleteItem(id, photoUrls),
     onSuccess: () => invalidateCatalog(client),
+  });
+}
+
+/** Upload a batch of locally-picked photos for the item form (create or edit). */
+export function useUploadItemPhotos() {
+  return useMutation({
+    mutationFn: ({
+      assets,
+      itemId,
+    }: {
+      assets: { uri: string; mimeType?: string }[];
+      itemId?: string;
+    }) => uploadItemPhotos(assets, itemId),
+  });
+}
+
+/** Best-effort storage cleanup when a photo is removed from the item form. */
+export function useDeleteItemPhoto() {
+  return useMutation({
+    mutationFn: (url: string) => deleteItemPhoto(url),
   });
 }
 

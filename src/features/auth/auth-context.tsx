@@ -41,6 +41,39 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/**
+ * Guards against a stale fetch (from a previous user/session) committing after
+ * a newer load has started — e.g. sign-out or account switch mid-flight. Bumps
+ * a ref before fetching and only commits state if it's still the most recent
+ * load by the time the fetch resolves.
+ */
+function useGuardedLoad<T>(
+  fetch: (userId: string) => Promise<T | null>,
+  setState: (value: T | null) => void,
+) {
+  const loadId = useRef(0);
+  return useCallback(
+    async (userId: string | undefined) => {
+      const id = ++loadId.current;
+      if (!userId) {
+        setState(null);
+        return;
+      }
+      try {
+        const next = await fetch(userId);
+        if (id === loadId.current) setState(next);
+      } catch (e) {
+        if (id !== loadId.current) return;
+        // A missing row right after signup is expected (trigger may lag); leave
+        // null and let a later refresh pick it up. Report anything unexpected.
+        console.error(e);
+        setState(null);
+      }
+    },
+    [fetch, setState],
+  );
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   // If Supabase isn't configured there's no session to restore, so we're not
   // loading — start false and skip the effect. Avoids a sync setState in the effect.
@@ -51,40 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [devBypass, setDevBypass] = useState(false);
 
   const user = session?.user ?? null;
-  // Guards against a stale fetch (from a previous user/session) committing after
-  // a newer load has started — e.g. sign-out or account switch mid-flight.
-  const customerLoadId = useRef(0);
-  const adminLoadId = useRef(0);
 
-  const loadCustomer = useCallback(async (userId: string | undefined) => {
-    const loadId = ++customerLoadId.current;
-    if (!userId) {
-      setCustomer(null);
-      return;
-    }
-    try {
-      const next = await fetchCustomer(userId);
-      if (loadId === customerLoadId.current) setCustomer(next);
-    } catch (e) {
-      if (loadId !== customerLoadId.current) return;
-      // A missing row right after signup is expected (trigger may lag); leave
-      // null and let a later refresh pick it up. Report anything unexpected.
-      console.error(e);
-      setCustomer(null);
-    }
-  }, []);
-
+  const loadCustomer = useGuardedLoad<Customer>(fetchCustomer, setCustomer);
   // Admin status resolves alongside the customer. `fetchAdmin` swallows the
   // "no row / not visible" case to null, so a non-admin simply lands on null.
-  const loadAdmin = useCallback(async (userId: string | undefined) => {
-    const loadId = ++adminLoadId.current;
-    if (!userId) {
-      setAdmin(null);
-      return;
-    }
-    const next = await fetchAdmin(userId);
-    if (loadId === adminLoadId.current) setAdmin(next);
-  }, []);
+  const loadAdmin = useGuardedLoad<Admin>(fetchAdmin, setAdmin);
 
   useEffect(() => {
     if (!supabase) return;
