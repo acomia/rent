@@ -14,7 +14,7 @@ import {
 import { AdminHeader } from '@/components/admin/admin-header';
 import { IconPicker } from '@/components/admin/icon-picker';
 import { TintPicker } from '@/components/admin/tint-picker';
-import { GRAPE } from '@/components/catalog/catalog-style';
+import { BRONZE } from '@/components/catalog/catalog-style';
 import { TextField } from '@/components/ui/text-field';
 import { useAdminCategories, useSaveCategory } from '@/features/admin/hooks';
 import {
@@ -79,14 +79,14 @@ export default function AdminCategoryForm() {
   // Edit mode but the category list hasn't loaded yet.
   if (!isNew && categories.isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-canvas dark:bg-night-950">
-        <ActivityIndicator color={GRAPE} />
+      <View className="flex-1 items-center justify-center bg-canvas">
+        <ActivityIndicator color={BRONZE} />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-canvas dark:bg-night-950">
+    <View className="flex-1 bg-canvas">
       <AdminHeader
         title={isNew ? 'New category' : 'Edit category'}
         onBack={() => back()}
@@ -98,7 +98,7 @@ export default function AdminCategoryForm() {
             hitSlop={8}
             className="py-1 active:opacity-70"
           >
-            <Text className="font-sans-semibold text-base text-grape dark:text-grape-soft">
+            <Text className="font-sans-semibold text-base text-bronze">
               {isSubmitting ? 'Saving…' : 'Save'}
             </Text>
           </Pressable>

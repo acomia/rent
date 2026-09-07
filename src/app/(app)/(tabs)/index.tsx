@@ -1,14 +1,7 @@
-import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useBottomTabBarHeight } from 'expo-router/js-tabs';
 import { useState } from 'react';
-import {
-  Pressable,
-  RefreshControl,
-  Text,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { RefreshControl, Text, View } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -20,7 +13,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CartButton } from '@/components/catalog/cart-button';
-import { CLOUD, GRAPE } from '@/components/catalog/catalog-style';
+import { BRONZE } from '@/components/catalog/catalog-style';
 import { CategoryTile } from '@/components/catalog/category-tile';
 import { SearchBar } from '@/components/catalog/search-bar';
 import { SegmentedToggle } from '@/components/catalog/segmented-toggle';
@@ -41,7 +34,6 @@ export default function Home() {
   const tabBarHeight = useBottomTabBarHeight();
   const router = useRouter();
   const { customer } = useAuth();
-  const dark = useColorScheme() === 'dark';
   const firstName = (customer?.full_name ?? '').split(' ')[0];
 
   const [gender, setGender] = useState<Gender>('women');
@@ -90,13 +82,13 @@ export default function Home() {
   function submitSearch() {
     const q = query.trim();
     if (!q) return;
-    router.navigate({ pathname: '/(app)/(tabs)/search', params: { q } });
+    router.navigate({ pathname: '/(app)/search', params: { q } });
   }
 
   const rows = chunkPairs(categories ?? []);
 
   return (
-    <View className="flex-1 bg-canvas dark:bg-night-950">
+    <View className="flex-1 bg-canvas">
       <Animated.ScrollView
         className="flex-1"
         contentContainerClassName="gap-7 px-6"
@@ -111,17 +103,15 @@ export default function Home() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={refetch}
-            tintColor={GRAPE}
+            tintColor={BRONZE}
             progressViewOffset={insets.top}
           />
         }
       >
         <View className="gap-1">
-          <Text className="font-sans text-base text-muted">
-            {firstName ? `Hi ${firstName},` : 'Hi there,'}
-          </Text>
-          <Text className="font-sans-extrabold text-4xl leading-[1.1] text-ink dark:text-cloud">
-            What item are you looking for?
+          <Text className="font-sans text-base text-muted">Good morning,</Text>
+          <Text className="font-display-bold text-4xl leading-[1.1] text-ink">
+            {firstName || 'Welcome'}
           </Text>
         </View>
 
@@ -142,8 +132,8 @@ export default function Home() {
         />
 
         <View className="gap-4">
-          <Text className="font-sans-bold text-xl text-ink dark:text-cloud">
-            Categories
+          <Text className="font-sans-medium text-[11px] uppercase tracking-[2px] text-muted">
+            Browse by category
           </Text>
           {isLoading ? (
             <CatalogLoading />
@@ -174,19 +164,12 @@ export default function Home() {
 
       <Animated.View
         pointerEvents="box-none"
-        className="absolute inset-x-0 top-0 z-10 bg-canvas px-6 dark:bg-night-950"
+        className="absolute inset-x-0 top-0 z-10 bg-canvas px-6"
         style={[{ paddingTop: insets.top + 8, paddingBottom: 12 }, headerStyle]}
       >
         <View className="flex-row items-center justify-between">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Account"
-            onPress={() => router.navigate('/(app)/(tabs)/profile')}
-            className="h-11 w-11 items-center justify-center rounded-full bg-lilac active:opacity-70 dark:bg-night-800"
-          >
-            <Feather name="menu" size={20} color={dark ? CLOUD : GRAPE} />
-          </Pressable>
-          <CartButton onPress={() => router.navigate('/(app)/(tabs)/bag')} />
+          <View className="flex-1" />
+          <CartButton onPress={() => router.navigate('/(app)/bag')} />
         </View>
       </Animated.View>
     </View>

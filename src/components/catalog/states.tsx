@@ -2,20 +2,21 @@ import { Feather } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
+import { MUTED } from './catalog-style';
 
 /**
  * Shared loading / empty / error states for the catalog screens, so the three
- * screens render the same skeletons and messaging. Colors come from the pastel
- * tokens; the skeleton mimics the product-card grid (aspect-[3/4] tiles).
+ * screens render the same skeletons and messaging. The skeleton mimics the
+ * product-card grid (aspect-[3/4] tiles).
  */
 
 function SkeletonCard() {
   return (
     <View className="flex-1 gap-3">
-      <View className="aspect-[3/4] rounded-3xl bg-canvas-subtle dark:bg-night-800" />
-      <View className="gap-1.5 px-1">
-        <View className="h-4 w-3/4 rounded-full bg-canvas-subtle dark:bg-night-800" />
-        <View className="h-3 w-1/2 rounded-full bg-canvas-subtle dark:bg-night-800" />
+      <View className="aspect-[3/4] rounded-2xl bg-canvas-subtle" />
+      <View className="gap-1.5 px-0.5">
+        <View className="h-4 w-3/4 rounded-full bg-canvas-subtle" />
+        <View className="h-3 w-1/2 rounded-full bg-canvas-subtle" />
       </View>
     </View>
   );
@@ -42,8 +43,8 @@ export function CatalogEmpty({
 }) {
   return (
     <View className="items-center gap-3 py-16">
-      <View className="h-16 w-16 items-center justify-center rounded-full bg-lilac dark:bg-night-800">
-        <Feather name="search" size={26} color="#8165CA" />
+      <View className="h-14 w-14 items-center justify-center rounded-full border border-hairline bg-canvas-subtle">
+        <Feather name="search" size={22} color={MUTED} />
       </View>
       <Text className="px-8 text-center font-sans text-base text-muted">
         {message}
@@ -55,8 +56,8 @@ export function CatalogEmpty({
 export function CatalogError({ onRetry }: { onRetry?: () => void }) {
   return (
     <View className="items-center gap-4 py-16">
-      <View className="h-16 w-16 items-center justify-center rounded-full bg-blush dark:bg-night-800">
-        <Feather name="wifi-off" size={26} color="#ED5C9D" />
+      <View className="h-14 w-14 items-center justify-center rounded-full bg-overdue-soft">
+        <Feather name="wifi-off" size={22} color="#A83232" />
       </View>
       <Text className="px-8 text-center font-sans text-base text-muted">
         We couldn&apos;t load the catalog. Check your connection and try again.

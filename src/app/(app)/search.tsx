@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GRAPE } from '@/components/catalog/catalog-style';
+import { BRONZE } from '@/components/catalog/catalog-style';
 import { ProductCard } from '@/components/catalog/product-card';
 import { SearchBar } from '@/components/catalog/search-bar';
 import {
@@ -57,7 +57,7 @@ export default function Search() {
 
   return (
     <ScrollView
-      className="flex-1 bg-canvas dark:bg-night-950"
+      className="flex-1 bg-canvas"
       contentContainerClassName="gap-6 px-6"
       contentContainerStyle={{
         paddingTop: insets.top + 12,
@@ -69,7 +69,7 @@ export default function Search() {
         <RefreshControl
           refreshing={isRefetching}
           onRefresh={refetch}
-          tintColor={GRAPE}
+          tintColor={BRONZE}
         />
       }
     >
@@ -84,9 +84,7 @@ export default function Search() {
       {term ? (
         <Text className="font-sans text-base text-muted">
           Results for{' '}
-          <Text className="font-sans-semibold text-ink dark:text-cloud">
-            “{term}”
-          </Text>
+          <Text className="font-sans-semibold text-ink">“{term}”</Text>
         </Text>
       ) : null}
 

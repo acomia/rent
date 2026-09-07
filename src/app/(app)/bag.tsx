@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GRAPE } from '@/components/catalog/catalog-style';
+import { BRONZE } from '@/components/catalog/catalog-style';
 import { ProductCard } from '@/components/catalog/product-card';
 import { CatalogError, CatalogLoading } from '@/components/catalog/states';
 import { useCart } from '@/features/catalog/cart-context';
@@ -30,7 +30,7 @@ export default function Bag() {
 
   return (
     <ScrollView
-      className="flex-1 bg-canvas dark:bg-night-950"
+      className="flex-1 bg-canvas"
       contentContainerClassName="gap-6 px-6"
       contentContainerStyle={{
         paddingTop: insets.top + 12,
@@ -41,14 +41,12 @@ export default function Bag() {
         <RefreshControl
           refreshing={isRefetching}
           onRefresh={refetch}
-          tintColor={GRAPE}
+          tintColor={BRONZE}
         />
       }
     >
       <View className="gap-1">
-        <Text className="font-sans-extrabold text-3xl text-ink dark:text-cloud">
-          Your bag
-        </Text>
+        <Text className="font-display-bold text-3xl text-ink">Your bag</Text>
         <Text className="font-sans text-base text-muted">
           {count === 0
             ? 'Nothing here yet'
@@ -62,8 +60,8 @@ export default function Bag() {
         <CatalogError onRetry={refetch} />
       ) : count === 0 ? (
         <View className="items-center gap-3 py-16">
-          <View className="h-16 w-16 items-center justify-center rounded-full bg-lilac dark:bg-night-800">
-            <Feather name="shopping-bag" size={26} color={GRAPE} />
+          <View className="h-16 w-16 items-center justify-center rounded-full bg-canvas-subtle">
+            <Feather name="shopping-bag" size={26} color={BRONZE} />
           </View>
           <Text className="px-8 text-center font-sans text-base text-muted">
             Your bag is empty. Browse the catalog and tap the pink button to add

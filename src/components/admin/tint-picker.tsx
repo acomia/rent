@@ -29,7 +29,7 @@ export function TintPicker({
               accessibilityState={{ selected }}
               onPress={() => onChange(tint)}
               className={`h-11 w-11 items-center justify-center rounded-full ${
-                selected ? 'border-2 border-grape' : ''
+                selected ? 'border-2 border-bronze' : ''
               }`}
               style={{ backgroundColor: tintAccent[tint] }}
             >

@@ -21,30 +21,26 @@ export function LegalDoc({
   const insets = useSafeAreaInsets();
   const { back } = useRouter();
   return (
-    <View className="flex-1 bg-canvas dark:bg-night-950">
+    <View className="flex-1 bg-canvas">
       <View
         className="flex-row items-center justify-between px-6 pb-3"
         style={{ paddingTop: insets.top + 12 }}
       >
-        <Text className="font-sans-bold text-2xl text-ink dark:text-cloud">
-          {title}
-        </Text>
+        <Text className="font-sans-bold text-2xl text-ink">{title}</Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Close"
           onPress={() => back()}
-          className="rounded-full bg-black/5 px-4 py-2 active:opacity-70 dark:bg-white/10"
+          className="rounded-full bg-black/5 px-4 py-2 active:opacity-70"
         >
-          <Text className="font-sans-medium text-grape dark:text-cloud">
-            Done
-          </Text>
+          <Text className="font-sans-medium text-bronze">Done</Text>
         </Pressable>
       </View>
       <ScrollView
         contentContainerClassName="gap-5 px-6 pb-16 pt-2"
         showsVerticalScrollIndicator={false}
       >
-        <Text className="font-sans-semibold text-xs uppercase tracking-widest text-grape dark:text-grape-soft">
+        <Text className="font-sans-semibold text-xs uppercase tracking-widest text-bronze">
           Version {TERMS_VERSION} · Draft
         </Text>
         <Text className="font-sans text-base leading-6 text-muted">
@@ -52,7 +48,7 @@ export function LegalDoc({
         </Text>
         {sections.map((s) => (
           <View key={s.heading} className="gap-1.5">
-            <Text className="font-sans-semibold text-lg text-ink dark:text-cloud">
+            <Text className="font-sans-semibold text-lg text-ink">
               {s.heading}
             </Text>
             <Text className="font-sans text-[15px] leading-6 text-muted">

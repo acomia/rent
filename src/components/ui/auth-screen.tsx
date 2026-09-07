@@ -11,9 +11,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brandmark } from '@/components/brandmark';
 
 /**
- * Shared shell for every screen in the (auth) flow: keyboard-aware, centered,
- * blush canvas, brandmark at the top, then a title/subtitle and the form. Keeps
- * the whole flow reading as one boutique.
+ * Shared shell for every screen in the (auth) flow: keyboard-aware, centered on
+ * the ivory ground, brandmark at the top, then a display-serif title, a quiet
+ * subtitle and the form. Keeps the whole flow reading as one boutique.
  */
 export function AuthScreen({
   title,
@@ -29,7 +29,7 @@ export function AuthScreen({
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-canvas dark:bg-night-950"
+      className="flex-1 bg-canvas"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
@@ -43,7 +43,7 @@ export function AuthScreen({
       >
         {showBrandmark ? <Brandmark /> : null}
         <View className="gap-2">
-          <Text className="font-sans-bold text-3xl text-ink dark:text-cloud">
+          <Text className="font-display-bold text-4xl leading-tight text-ink">
             {title}
           </Text>
           {subtitle ? (

@@ -16,9 +16,28 @@ export type Customer = {
   terms_accepted_at: string | null;
   privacy_accepted_at: string | null;
   terms_version: string | null;
+  /** Public URL in the `avatars` bucket, or null for the initial fallback. */
+  avatar_url: string | null;
+  date_of_birth: string | null;
+  preferred_language: 'en' | 'fil';
+  /** Email/marketing consent — distinct from the push channels below. */
+  marketing_opt_in: boolean;
+  notify_booking_updates: boolean;
+  notify_new_arrivals: boolean;
+  notify_promotions: boolean;
+  notify_tips: boolean;
   created_at: string;
   updated_at: string;
 };
+
+/** The push channels, as one object — the shape the Settings switches bind to. */
+export type NotificationPrefs = Pick<
+  Customer,
+  | 'notify_booking_updates'
+  | 'notify_new_arrivals'
+  | 'notify_promotions'
+  | 'notify_tips'
+>;
 
 export async function fetchCustomer(userId: string): Promise<Customer | null> {
   if (!supabase) return null;
@@ -35,7 +54,56 @@ export type CustomerUpdate = {
   full_name?: string;
   phone_number?: string;
   address?: string | null;
+  avatar_url?: string | null;
+  date_of_birth?: string | null;
+  preferred_language?: 'en' | 'fil';
+  marketing_opt_in?: boolean;
+  notify_booking_updates?: boolean;
+  notify_new_arrivals?: boolean;
+  notify_promotions?: boolean;
+  notify_tips?: boolean;
 };
+
+/**
+ * NOTE on email: it is absent from `CustomerUpdate` on purpose. The column
+ * mirrors `auth.users.email`, so writing it alone would let the two drift and
+ * the customer would still sign in with the old address. Changing it for real is
+ * `supabase.auth.updateUser({ email })`, which re-verifies — a flow of its own,
+ * not a profile field. The profile UI shows email read-only and says so.
+ */
+
+const AVATAR_BUCKET = 'avatars';
+
+/**
+ * Upload a locally-picked image as this customer's avatar and return its public
+ * URL.
+ *
+ * The path MUST start with the user's own id: every write policy on the bucket
+ * checks that first segment against `auth.uid()`, which is what stops one
+ * customer overwriting another's photo (see `0015_storage_avatars.sql`).
+ */
+export async function uploadAvatar(
+  userId: string,
+  localUri: string,
+  contentType = 'image/jpeg',
+): Promise<string> {
+  if (!supabase) throw new Error('Supabase is not configured.');
+  const ext = contentType.includes('png')
+    ? 'png'
+    : contentType.includes('webp')
+      ? 'webp'
+      : 'jpg';
+  const uid = `${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`}`;
+  const path = `${userId}/${uid}.${ext}`;
+
+  const arrayBuffer = await fetch(localUri).then((res) => res.arrayBuffer());
+  const { error } = await supabase.storage
+    .from(AVATAR_BUCKET)
+    .upload(path, arrayBuffer, { contentType, upsert: false });
+  if (error) throw error;
+
+  return supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
+}
 
 export async function updateCustomer(
   userId: string,

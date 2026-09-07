@@ -13,7 +13,7 @@ import {
 
 import { AdminHeader } from '@/components/admin/admin-header';
 import {
-  GRAPE,
+  BRONZE,
   INK,
   tintAccent,
   tintClass,
@@ -32,10 +32,10 @@ function ItemRow({ item, onPress }: { item: Item; onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel={item.name}
       onPress={onPress}
-      className="flex-row items-center gap-3 rounded-2xl bg-canvas-subtle p-3 active:opacity-80 dark:bg-night-900"
+      className="flex-row items-center gap-3 rounded-2xl bg-canvas-subtle p-3 active:opacity-80"
     >
       <View
-        className={`h-16 w-16 items-center justify-center overflow-hidden rounded-xl dark:bg-night-800 ${tintClass[item.tint]}`}
+        className={`h-16 w-16 items-center justify-center overflow-hidden rounded-xl ${tintClass[item.tint]}`}
       >
         {item.photos[0] ? (
           <Image
@@ -56,7 +56,7 @@ function ItemRow({ item, onPress }: { item: Item; onPress: () => void }) {
       <View className="flex-1 gap-0.5">
         <Text
           numberOfLines={1}
-          className="font-sans-semibold text-base text-ink dark:text-cloud"
+          className="font-sans-semibold text-base text-ink"
         >
           {item.name}
         </Text>
@@ -67,11 +67,11 @@ function ItemRow({ item, onPress }: { item: Item; onPress: () => void }) {
       </View>
 
       {inactive ? (
-        <View className="rounded-full bg-night-700/10 px-2.5 py-1 dark:bg-night-700">
+        <View className="rounded-full bg-night-700/10 px-2.5 py-1">
           <Text className="font-sans-medium text-xs text-muted">Hidden</Text>
         </View>
       ) : null}
-      <Feather name="chevron-right" size={20} color="#6E6A7D" />
+      <Feather name="chevron-right" size={20} color="#6F675B" />
     </Pressable>
   );
 }
@@ -82,7 +82,7 @@ export default function AdminItems() {
   const items = data ?? [];
 
   return (
-    <View className="flex-1 bg-canvas dark:bg-night-950">
+    <View className="flex-1 bg-canvas">
       <AdminHeader
         title="Items"
         onBack={() => back()}
@@ -90,11 +90,11 @@ export default function AdminItems() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Add item"
-            onPress={() => push('/(app)/admin/items/new')}
+            onPress={() => push('/admin/item/new')}
             hitSlop={8}
             className="py-1 active:opacity-70"
           >
-            <Text className="font-sans-semibold text-base text-grape dark:text-grape-soft">
+            <Text className="font-sans-semibold text-base text-bronze">
               Add
             </Text>
           </Pressable>
@@ -103,7 +103,7 @@ export default function AdminItems() {
 
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={GRAPE} />
+          <ActivityIndicator color={BRONZE} />
         </View>
       ) : isError ? (
         <CatalogError onRetry={refetch} />
@@ -115,7 +115,7 @@ export default function AdminItems() {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              tintColor={GRAPE}
+              tintColor={BRONZE}
             />
           }
         >
@@ -128,7 +128,7 @@ export default function AdminItems() {
                 item={item}
                 onPress={() =>
                   push({
-                    pathname: '/(app)/admin/items/[id]',
+                    pathname: '/admin/item/[id]',
                     params: { id: item.id },
                   })
                 }

@@ -7,12 +7,11 @@ import {
   ScrollView,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CartButton } from '@/components/catalog/cart-button';
-import { CLOUD, GRAPE, INK } from '@/components/catalog/catalog-style';
+import { BRONZE, INK } from '@/components/catalog/catalog-style';
 import {
   EMPTY_SHEET_FILTERS,
   FilterSheet,
@@ -47,7 +46,6 @@ function hasActiveFilters(f: SheetFilters): boolean {
 export default function CategoryListing() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const dark = useColorScheme() === 'dark';
   const { add, has } = useCart();
   const { slug, gender } = useLocalSearchParams<{
     slug: CategorySlug;
@@ -89,7 +87,7 @@ export default function CategoryListing() {
 
   return (
     <ScrollView
-      className="flex-1 bg-canvas dark:bg-night-950"
+      className="flex-1 bg-canvas"
       contentContainerClassName="gap-6 px-6"
       contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 48 }}
       showsVerticalScrollIndicator={false}
@@ -97,7 +95,7 @@ export default function CategoryListing() {
         <RefreshControl
           refreshing={isRefetching}
           onRefresh={refetch}
-          tintColor={GRAPE}
+          tintColor={BRONZE}
         />
       }
     >
@@ -106,16 +104,14 @@ export default function CategoryListing() {
           accessibilityRole="button"
           accessibilityLabel="Back"
           onPress={() => router.back()}
-          className="h-11 w-11 items-center justify-center rounded-full bg-lilac active:opacity-70 dark:bg-night-800"
+          className="h-11 w-11 items-center justify-center rounded-full bg-canvas-subtle active:opacity-70"
         >
-          <Feather name="chevron-left" size={22} color={dark ? CLOUD : INK} />
+          <Feather name="chevron-left" size={22} color={INK} />
         </Pressable>
         <CartButton />
       </View>
 
-      <Text className="font-sans-extrabold text-4xl text-ink dark:text-cloud">
-        {category}
-      </Text>
+      <Text className="font-display-bold text-4xl text-ink">{category}</Text>
 
       <View className="flex-row gap-3">
         <FilterPill

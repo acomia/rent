@@ -8,9 +8,8 @@ import Animated, {
 type Option = { label: string; value: string };
 
 /**
- * The signature control: a pill segmented toggle with a grape thumb that slides
- * between options. Width is measured on layout so the thumb tracks any option
- * count.
+ * Pill segmented toggle with a charcoal thumb that slides between options.
+ * Width is measured on layout so the thumb tracks any option count.
  */
 export function SegmentedToggle({
   options,
@@ -22,7 +21,7 @@ export function SegmentedToggle({
   onChange: (value: string) => void;
 }) {
   const [width, setWidth] = useState(0);
-  const PADDING = 6;
+  const PADDING = 5;
   const index = Math.max(
     0,
     options.findIndex((o) => o.value === value),
@@ -38,7 +37,7 @@ export function SegmentedToggle({
   return (
     <View
       onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}
-      className="h-14 flex-row rounded-full bg-lilac dark:bg-night-800"
+      className="h-12 flex-row rounded-full border border-hairline bg-canvas-subtle"
       style={{ padding: PADDING }}
     >
       {segWidth > 0 ? (
@@ -54,7 +53,7 @@ export function SegmentedToggle({
             },
             thumbStyle,
           ]}
-          className="rounded-full bg-grape dark:bg-grape-soft"
+          className="rounded-full bg-charcoal"
         />
       ) : null}
       {options.map((o) => {
@@ -68,8 +67,10 @@ export function SegmentedToggle({
             className="flex-1 items-center justify-center"
           >
             <Text
-              className={`font-sans-semibold text-base ${
-                active ? 'text-white' : 'text-ink dark:text-cloud'
+              className={`text-sm ${
+                active
+                  ? 'font-sans-semibold text-white'
+                  : 'font-sans-medium text-ink'
               }`}
             >
               {o.label}

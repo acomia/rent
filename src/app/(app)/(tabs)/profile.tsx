@@ -1,171 +1,176 @@
-import { FieldGroup, Host, ListItem, TextInput } from '@expo/ui';
+import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { useBottomTabBarHeight } from 'expo-router/js-tabs';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { INK } from '@/components/catalog/catalog-style';
+import { Avatar } from '@/components/ui/avatar';
+import { RowGroup, SettingsRow } from '@/components/ui/settings-row';
 import { useAuth } from '@/features/auth/auth-context';
-import { updateCustomer, type Customer } from '@/features/auth/customer';
-import { normalizePhone, profileSchema } from '@/features/auth/schemas';
 
-export default function Profile() {
-  const { customer } = useAuth();
-  const insets = useSafeAreaInsets();
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 
-  if (!customer) {
-    return (
-      <View
-        className="flex-1 items-center justify-center bg-canvas dark:bg-night-950"
-        style={{ paddingTop: insets.top }}
-      >
-        <ActivityIndicator color="#8165CA" />
-      </View>
-    );
-  }
-
-  // Keyed by id so state re-initializes from a freshly loaded customer.
-  return <ProfileForm key={customer.id} customer={customer} />;
+function memberSince(iso: string | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function ProfileForm({ customer }: { customer: Customer }) {
+export default function Profile() {
   const insets = useSafeAreaInsets();
-  const { replace, back, push } = useRouter();
-  const { user, phoneVerified, isAdmin, refreshCustomer, signOut } = useAuth();
+  const tabBarHeight = useBottomTabBarHeight();
+  const router = useRouter();
+  const { customer, user, isAdmin } = useAuth();
 
-  const [fullName, setFullName] = useState(customer.full_name ?? '');
-  const [phone, setPhone] = useState(customer.phone_number ?? '');
-  const [address, setAddress] = useState(customer.address ?? '');
-  const [saving, setSaving] = useState(false);
-
-  async function onSave() {
-    const parsed = profileSchema.safeParse({ fullName, phone, address });
-    if (!parsed.success) {
-      Alert.alert('Check your details', parsed.error.issues[0].message);
-      return;
-    }
-    const normalizedPhone = normalizePhone(parsed.data.phone);
-    setSaving(true);
-    try {
-      await updateCustomer(customer.id, {
-        full_name: parsed.data.fullName,
-        phone_number: normalizedPhone,
-        address: parsed.data.address ? parsed.data.address : null,
-      });
-      await refreshCustomer();
-      // Reflect the persisted/normalized values (the row id is unchanged, so the
-      // key-based remount won't fire — sync local state explicitly).
-      setFullName(parsed.data.fullName);
-      setPhone(normalizedPhone);
-      setAddress(parsed.data.address ?? '');
-      Alert.alert('Saved', 'Your profile has been updated.');
-    } catch (e) {
-      Alert.alert(
-        'Could not save',
-        e instanceof Error ? e.message : 'Please try again.',
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function onSignOut() {
-    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign out',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut();
-          replace('/(auth)/login');
-        },
-      },
-    ]);
-  }
+  const since = memberSince(customer?.created_at);
 
   return (
-    <View className="flex-1 bg-canvas dark:bg-night-950">
+    <View className="flex-1 bg-canvas">
       <View
-        className="flex-row items-center justify-between px-5 pb-3"
-        style={{ paddingTop: insets.top + 12 }}
+        className="flex-row items-center justify-between px-5 pb-2"
+        style={{ paddingTop: insets.top + 10 }}
       >
+        <Text className="font-display-bold text-3xl text-ink">Profile</Text>
         <Pressable
           accessibilityRole="button"
-          onPress={() => back()}
-          className="py-1 active:opacity-70"
+          accessibilityLabel="Settings"
+          onPress={() => router.push('/(app)/profile/settings')}
+          hitSlop={8}
+          className="h-10 w-10 items-center justify-center rounded-full active:opacity-70"
         >
-          <Text className="font-sans text-base text-grape dark:text-grape-soft">
-            Back
-          </Text>
-        </Pressable>
-        <Text className="font-sans-semibold text-lg text-ink dark:text-cloud">
-          Profile
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          disabled={saving}
-          onPress={onSave}
-          className="py-1 active:opacity-70"
-        >
-          <Text className="font-sans-semibold text-base text-grape dark:text-grape-soft">
-            {saving ? 'Saving…' : 'Save'}
-          </Text>
+          <Feather name="settings" size={21} color={INK} />
         </Pressable>
       </View>
 
-      <Host style={{ flex: 1 }}>
-        <FieldGroup>
-          <FieldGroup.Section title="Full name">
-            <TextInput
-              defaultValue={fullName}
-              onChangeText={setFullName}
-              autoCapitalize="words"
-              placeholder="Your full name"
+      <ScrollView
+        contentContainerClassName="gap-5 px-5 pt-2"
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 16 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="flex-row items-center gap-4">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Edit profile photo"
+            onPress={() => router.push('/(app)/profile/edit')}
+            className="active:opacity-80"
+          >
+            <Avatar
+              uri={customer?.avatar_url}
+              name={customer?.full_name}
+              size={76}
+              badge={
+                <View className="h-7 w-7 items-center justify-center rounded-full border-2 border-canvas bg-bronze">
+                  <Feather name="edit-2" size={12} color="#FFFFFF" />
+                </View>
+              }
             />
-          </FieldGroup.Section>
-
-          <FieldGroup.Section title="Contact number">
-            <TextInput
-              defaultValue={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              placeholder="09xx xxx xxxx"
-            />
-          </FieldGroup.Section>
-
-          <FieldGroup.Section title="Address">
-            <TextInput
-              defaultValue={address}
-              onChangeText={setAddress}
-              multiline
-              placeholder="Where we can reach you"
-            />
-          </FieldGroup.Section>
-
-          <FieldGroup.Section title="Account">
-            <ListItem supportingText={user?.email ?? '—'}>Email</ListItem>
-            <ListItem
-              supportingText={phoneVerified ? 'Verified' : 'Not verified'}
+          </Pressable>
+          <View className="flex-1 gap-0.5">
+            <Text
+              numberOfLines={1}
+              className="font-display-bold text-xl text-ink"
             >
-              Phone verification
-            </ListItem>
-          </FieldGroup.Section>
+              {customer?.full_name || 'Your profile'}
+            </Text>
+            <Text numberOfLines={1} className="font-sans text-sm text-muted">
+              {customer?.email ?? user?.email ?? ''}
+            </Text>
+            {customer?.phone_number ? (
+              <Text className="font-sans text-sm text-muted">
+                {customer.phone_number}
+              </Text>
+            ) : null}
+          </View>
+        </View>
 
-          {isAdmin ? (
-            <FieldGroup.Section title="Shop">
-              <ListItem
-                supportingText="Manage catalog & inventory"
-                onPress={() => push('/(app)/admin')}
-              >
-                Admin
-              </ListItem>
-            </FieldGroup.Section>
-          ) : null}
+        {/*
+          Membership recognition, derived from the signup date alone. Deliberately
+          NOT a tier: loyalty and rewards are v2, so this says nothing it cannot
+          back up — no points, no level, no implied discount.
+        */}
+        {since ? (
+          <View className="flex-row items-center gap-3 rounded-2xl bg-bronze-soft px-4 py-3.5">
+            <Feather name="award" size={22} color="#8A6F45" />
+            <View className="gap-0.5">
+              <Text className="font-sans-semibold text-base text-bronze-deep">
+                Valued customer
+              </Text>
+              <Text className="font-sans text-xs text-bronze-deep">
+                Since {since}
+              </Text>
+            </View>
+          </View>
+        ) : null}
 
-          <FieldGroup.Section>
-            <ListItem onPress={onSignOut}>Sign out</ListItem>
-          </FieldGroup.Section>
-        </FieldGroup>
-      </Host>
+        <RowGroup>
+          <SettingsRow
+            first
+            icon="calendar"
+            label="My bookings"
+            hint="View and manage your bookings"
+            onPress={() => router.push('/(app)/(tabs)/bookings')}
+          />
+        </RowGroup>
+
+        <RowGroup>
+          <SettingsRow
+            first
+            icon="user"
+            label="Personal information"
+            hint="Name, phone number, date of birth"
+            onPress={() => router.push('/(app)/profile/edit')}
+          />
+          <SettingsRow
+            icon="bell"
+            label="Notification preferences"
+            hint="Choose what you want to receive"
+            onPress={() => router.push('/(app)/profile/settings')}
+          />
+        </RowGroup>
+
+        <RowGroup>
+          <SettingsRow
+            first
+            icon="help-circle"
+            label="Help & support"
+            hint="Get assistance anytime"
+            onPress={() => router.push('/(app)/profile/settings')}
+          />
+          <SettingsRow
+            icon="file-text"
+            label="Terms and policies"
+            hint="Terms of service, privacy policy"
+            onPress={() => router.push('/(auth)/terms')}
+          />
+        </RowGroup>
+
+        {isAdmin ? (
+          <RowGroup label="Shop">
+            <SettingsRow
+              first
+              icon="briefcase"
+              label="Shop admin"
+              hint="Bookings, items, returns"
+              onPress={() => router.replace('/admin')}
+            />
+          </RowGroup>
+        ) : null}
+      </ScrollView>
     </View>
   );
 }

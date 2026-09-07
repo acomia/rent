@@ -96,7 +96,7 @@ export default function Signup() {
       subtitle="A few details, then we verify your number by text."
     >
       {!configured ? (
-        <Text className="rounded-xl bg-amber-500/15 px-4 py-3 font-sans text-sm text-amber-700 dark:text-amber-400">
+        <Text className="rounded-xl bg-amber-500/15 px-4 py-3 font-sans text-sm text-amber-700">
           Supabase keys are missing from .env — signup will not work yet.
         </Text>
       ) : null}
@@ -106,7 +106,7 @@ export default function Signup() {
         name="role"
         render={({ field: { onChange, value } }) => (
           <View className="gap-2">
-            <Text className="font-sans-medium text-sm text-ink dark:text-cloud">
+            <Text className="font-sans-medium text-sm text-ink">
               I am signing up as
             </Text>
             <SegmentedToggle
@@ -241,9 +241,7 @@ export default function Signup() {
             >
               <View
                 className={`mt-0.5 h-6 w-6 items-center justify-center rounded-md border-2 ${
-                  value
-                    ? 'border-grape bg-grape dark:border-grape-soft dark:bg-grape-soft'
-                    : 'border-black/25 dark:border-white/30'
+                  value ? 'border-bronze bg-bronze' : 'border-black/25'
                 }`}
               >
                 {value ? (
@@ -254,14 +252,14 @@ export default function Signup() {
                 I agree to the{' '}
                 <Link
                   href="/(auth)/terms"
-                  className="font-sans-semibold text-grape dark:text-grape-soft"
+                  className="font-sans-semibold text-bronze"
                 >
                   Terms
                 </Link>{' '}
                 and{' '}
                 <Link
                   href="/(auth)/privacy"
-                  className="font-sans-semibold text-grape dark:text-grape-soft"
+                  className="font-sans-semibold text-bronze"
                 >
                   Privacy Policy
                 </Link>
@@ -291,10 +289,7 @@ export default function Signup() {
 
       <View className="flex-row justify-center gap-1 pt-2">
         <Text className="font-sans text-muted">Already have an account?</Text>
-        <Link
-          href="/(auth)/login"
-          className="font-sans-semibold text-grape dark:text-grape-soft"
-        >
+        <Link href="/(auth)/login" className="font-sans-semibold text-bronze">
           Sign in
         </Link>
       </View>

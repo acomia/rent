@@ -53,14 +53,12 @@ function Chip({
       accessibilityState={{ selected: active }}
       onPress={onPress}
       className={`rounded-full px-4 py-2.5 active:opacity-80 ${
-        active
-          ? 'bg-grape dark:bg-grape-soft'
-          : 'bg-canvas-subtle dark:bg-night-800'
+        active ? 'bg-bronze' : 'bg-canvas-subtle'
       }`}
     >
       <Text
         className={`font-sans-semibold text-sm ${
-          active ? 'text-white' : 'text-ink dark:text-cloud'
+          active ? 'text-white' : 'text-ink'
         }`}
       >
         {label}
@@ -78,9 +76,7 @@ function Section({
 }) {
   return (
     <View className="gap-3">
-      <Text className="font-sans-bold text-base text-ink dark:text-cloud">
-        {title}
-      </Text>
+      <Text className="font-sans-bold text-base text-ink">{title}</Text>
       <View className="flex-row flex-wrap gap-2.5">{children}</View>
     </View>
   );
@@ -140,22 +136,20 @@ function SheetBody({
 
   return (
     <View
-      className="rounded-t-[32px] bg-canvas px-6 pt-3 dark:bg-night-950"
+      className="rounded-t-[32px] bg-canvas px-6 pt-3"
       style={{ paddingBottom: insets.bottom + 16 }}
     >
       <View className="mb-4 items-center">
-        <View className="h-1.5 w-10 rounded-full bg-ink/15 dark:bg-cloud/20" />
+        <View className="h-1.5 w-10 rounded-full bg-ink/15" />
       </View>
 
       <View className="mb-4 flex-row items-center justify-between">
-        <Text className="font-sans-extrabold text-2xl text-ink dark:text-cloud">
-          Filters
-        </Text>
+        <Text className="font-display-bold text-2xl text-ink">Filters</Text>
         <Pressable
           accessibilityRole="button"
           onPress={() => setDraft(EMPTY_SHEET_FILTERS)}
         >
-          <Text className="font-sans-semibold text-sm text-grape dark:text-grape-soft">
+          <Text className="font-sans-semibold text-sm text-bronze">
             Clear all
           </Text>
         </Pressable>
