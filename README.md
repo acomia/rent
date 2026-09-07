@@ -1,4 +1,4 @@
-# Hiramda
+# Renta
 
 Mobile app for gown & costume rentals — customers browse and reserve; the shop
 manages inventory, bookings, payments, and returns. Single shop in v1.

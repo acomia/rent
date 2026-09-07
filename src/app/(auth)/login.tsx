@@ -49,7 +49,7 @@ export default function Login() {
   return (
     <AuthScreen title="Welcome back" subtitle="Sign in to browse and reserve.">
       {!configured ? (
-        <Text className="rounded-xl bg-amber-500/15 px-4 py-3 font-sans text-sm text-amber-700 dark:text-amber-400">
+        <Text className="rounded-xl bg-amber-500/15 px-4 py-3 font-sans text-sm text-amber-700">
           Supabase keys are missing from .env — sign-in will not work yet.
         </Text>
       ) : null}
@@ -91,7 +91,7 @@ export default function Login() {
 
       <Link
         href="/(auth)/forgot-password"
-        className="self-end font-sans-medium text-sm text-grape dark:text-grape-soft"
+        className="self-end font-sans-medium text-sm text-bronze"
       >
         Forgot password?
       </Link>
@@ -115,10 +115,7 @@ export default function Login() {
 
       <View className="flex-row justify-center gap-1 pt-2">
         <Text className="font-sans text-muted">New here?</Text>
-        <Link
-          href="/(auth)/signup"
-          className="font-sans-semibold text-grape dark:text-grape-soft"
-        >
+        <Link href="/(auth)/signup" className="font-sans-semibold text-bronze">
           Create an account
         </Link>
       </View>

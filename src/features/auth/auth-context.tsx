@@ -29,6 +29,15 @@ type AuthState = {
   admin: Admin | null;
   /** Convenience flag: true when the signed-in user has an `admins` row. */
   isAdmin: boolean;
+  /**
+   * False while the `admins` lookup for the current user is still in flight.
+   *
+   * `isAdmin` is `Boolean(admin)`, so it reads false both for "not an admin" and
+   * for "we don't know yet". Anything that BRANCHES on role — chiefly the
+   * post-login redirect — must wait on this instead, or it will send an admin to
+   * the customer app and then correct itself, which the user sees as a flash.
+   */
+  roleResolved: boolean;
   /** Whether the user has completed phone-OTP verification. */
   phoneVerified: boolean;
   /** DEV-ONLY: true when auth has been bypassed for local demo (no real session). */
@@ -36,6 +45,11 @@ type AuthState = {
   /** DEV-ONLY: skip auth and treat the app as signed in. No-op in production builds. */
   enableDevBypass: () => void;
   refreshCustomer: () => Promise<void>;
+  /**
+   * Commit a row the caller already has — `updateCustomer` returns the updated
+   * row, so a write followed by `refreshCustomer()` was a wasted round trip.
+   */
+  commitCustomer: (next: Customer) => void;
   signOut: () => Promise<void>;
 };
 
@@ -81,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [admin, setAdmin] = useState<Admin | null>(null);
+  const [roleResolved, setRoleResolved] = useState(!supabase);
   const [devBypass, setDevBypass] = useState(false);
 
   const user = session?.user ?? null;
@@ -114,13 +129,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) {
+          setRoleResolved(true);
+          setLoading(false);
+        }
       });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);
-      loadCustomer(next?.user.id);
-      loadAdmin(next?.user.id);
+      if (!next?.user) {
+        setCustomer(null);
+        setAdmin(null);
+        setRoleResolved(true);
+        return;
+      }
+      setRoleResolved(false);
+      Promise.all([
+        loadCustomer(next.user.id),
+        loadAdmin(next.user.id),
+      ]).finally(() => setRoleResolved(true));
     });
 
     return () => {
@@ -133,6 +160,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => loadCustomer(session?.user.id),
     [loadCustomer, session?.user.id],
   );
+
+  const commitCustomer = useCallback((next: Customer) => {
+    setCustomer(next);
+  }, []);
 
   const enableDevBypass = useCallback(() => {
     if (__DEV__) setDevBypass(true);
@@ -153,10 +184,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       customer,
       admin,
       isAdmin: Boolean(admin),
+      roleResolved,
       phoneVerified: Boolean(user?.phone_confirmed_at),
       devBypass,
       enableDevBypass,
       refreshCustomer,
+      commitCustomer,
       signOut,
     }),
     [
@@ -165,9 +198,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       customer,
       admin,
+      roleResolved,
       devBypass,
       enableDevBypass,
       refreshCustomer,
+      commitCustomer,
       signOut,
     ],
   );

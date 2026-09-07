@@ -29,15 +29,13 @@ export function IconPicker({
               accessibilityState={{ selected }}
               onPress={() => onChange(glyph)}
               className={`h-12 w-12 items-center justify-center rounded-2xl ${
-                selected
-                  ? 'bg-grape dark:bg-grape-soft'
-                  : 'bg-canvas-subtle dark:bg-night-800'
+                selected ? 'bg-bronze' : 'bg-canvas-subtle'
               }`}
             >
               <Glyph
                 name={glyph}
                 size={22}
-                color={selected ? '#fff' : '#6E6A7D'}
+                color={selected ? '#fff' : '#6F675B'}
               />
             </Pressable>
           );

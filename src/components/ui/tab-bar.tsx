@@ -4,26 +4,27 @@ import type { ComponentProps } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GRAPE } from '@/components/catalog/catalog-style';
+import { INK, MUTED } from '@/components/catalog/catalog-style';
 import { useCart } from '@/features/catalog/cart-context';
 
 type FeatherName = ComponentProps<typeof Feather>['name'];
 
-const WHITE = '#FFFFFF';
-/** Inactive icons: white dimmed on the grape pill. */
-const WHITE_DIM = 'rgba(255,255,255,0.6)';
-
 const ICONS: Record<string, FeatherName> = {
   index: 'home',
-  search: 'search',
-  bag: 'shopping-bag',
+  bookings: 'calendar',
   profile: 'user',
 };
 
+const LABELS: Record<string, string> = {
+  index: 'Home',
+  bookings: 'Bookings',
+  profile: 'Profile',
+};
+
 /**
- * Floating grape pill tab bar: a rounded bar with side margins and a soft
- * shadow, white line icons (no labels), and a subtle white highlight behind the
- * active tab. The bag tab carries a live count badge.
+ * A quiet bar on the ivory ground with a hairline above it: single-weight line
+ * icons with their labels beneath, active in ink and inactive in muted. The bag
+ * tab carries a live count.
  */
 export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -31,22 +32,15 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   return (
     <View
-      pointerEvents="box-none"
-      className="bg-canvas px-5 pt-2 dark:bg-night-950"
-      style={{ paddingBottom: insets.bottom > 0 ? insets.bottom : 16 }}
+      className="border-t border-hairline bg-canvas px-2 pt-2"
+      style={{ paddingBottom: insets.bottom > 0 ? insets.bottom : 12 }}
     >
-      <View
-        className="flex-row items-center justify-around rounded-full bg-grape px-2 py-2.5 dark:bg-grape-soft"
-        style={{
-          shadowColor: GRAPE,
-          shadowOpacity: 0.35,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 8 },
-          elevation: 8,
-        }}
-      >
+      <View className="flex-row items-start justify-around">
         {state.routes.map((route, index) => {
-          const label = descriptors[route.key].options.title ?? route.name;
+          const label =
+            LABELS[route.name] ??
+            descriptors[route.key].options.title ??
+            route.name;
           const isFocused = state.index === index;
           const icon = ICONS[route.name] ?? 'circle';
           const showBadge = route.name === 'bag' && count > 0;
@@ -74,25 +68,31 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               accessibilityLabel={label}
               onPress={onPress}
               onLongPress={onLongPress}
-              className="h-12 w-12 items-center justify-center rounded-full active:opacity-70"
+              className="min-h-[48px] flex-1 items-center gap-1 py-1 active:opacity-60"
             >
-              {isFocused ? (
-                <View className="absolute inset-0 rounded-full bg-white/20" />
-              ) : null}
               <View>
                 <Feather
                   name={icon}
-                  size={24}
-                  color={isFocused ? WHITE : WHITE_DIM}
+                  size={22}
+                  color={isFocused ? INK : MUTED}
                 />
                 {showBadge ? (
-                  <View className="absolute -right-2.5 -top-2 h-4 min-w-[16px] items-center justify-center rounded-full bg-bubblegum px-1">
+                  <View className="absolute -right-2.5 -top-1.5 h-4 min-w-[16px] items-center justify-center rounded-full bg-bronze px-1">
                     <Text className="font-sans-bold text-[10px] leading-none text-white">
                       {count}
                     </Text>
                   </View>
                 ) : null}
               </View>
+              <Text
+                className={`text-[11px] ${
+                  isFocused
+                    ? 'font-sans-semibold text-ink'
+                    : 'font-sans text-muted'
+                }`}
+              >
+                {label}
+              </Text>
             </Pressable>
           );
         })}

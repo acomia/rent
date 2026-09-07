@@ -132,9 +132,7 @@ export default function VerifyOtp() {
       >
         <Text
           className={
-            cooldown > 0
-              ? 'text-muted'
-              : 'font-sans-medium text-grape dark:text-grape-soft'
+            cooldown > 0 ? 'text-muted' : 'font-sans-medium text-bronze'
           }
         >
           {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}

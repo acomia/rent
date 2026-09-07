@@ -1,20 +1,20 @@
 {
   "expo": {
-    "name": "Hiramda",
-    "slug": "hiramda",
+    "name": "Renta",
+    "slug": "renta",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "hiramda",
-    "userInterfaceStyle": "automatic",
+    "scheme": "renta",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.arnancomia.hiramda"
+      "bundleIdentifier": "com.arnancomia.renta"
     },
     "android": {
-      "package": "com.arnancomia.hiramda",
+      "package": "com.arnancomia.renta",
       "adaptiveIcon": {
-        "backgroundColor": "#EDE7FA",
+        "backgroundColor": "#F7F3EC",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -30,7 +30,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#8165CA",
+          "backgroundColor": "#F7F3EC",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
@@ -38,7 +38,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Hiramda uses your photos so admins can add item photos to the catalog."
+          "photosPermission": "Renta uses your photos so admins can add item photos to the catalog."
         }
       ]
     ],

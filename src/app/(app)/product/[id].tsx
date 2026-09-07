@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -13,11 +12,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GRAPE, INK, tintClass } from '@/components/catalog/catalog-style';
+import { BRONZE, INK, tintClass } from '@/components/catalog/catalog-style';
 import { Glyph } from '@/components/catalog/glyph';
 import { CatalogError } from '@/components/catalog/states';
 import { Button } from '@/components/ui/button';
-import { useCart } from '@/features/catalog/cart-context';
+import { useBooking } from '@/features/booking/booking-context';
 import { useItem } from '@/features/catalog/hooks';
 import { formatPeso, type Item } from '@/features/catalog/types';
 
@@ -26,21 +25,21 @@ const HERO_HEIGHT = 380;
 export default function ProductDetail() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { add, has } = useCart();
+  const { startDraft } = useBooking();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: product, isLoading, isError, refetch } = useItem(id);
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-canvas dark:bg-night-950">
-        <ActivityIndicator color={GRAPE} />
+      <View className="flex-1 items-center justify-center bg-canvas">
+        <ActivityIndicator color={BRONZE} />
       </View>
     );
   }
 
   if (isError) {
     return (
-      <View className="flex-1 justify-center bg-canvas px-6 dark:bg-night-950">
+      <View className="flex-1 justify-center bg-canvas px-6">
         <CatalogError onRetry={refetch} />
       </View>
     );
@@ -48,31 +47,31 @@ export default function ProductDetail() {
 
   if (!product) {
     return (
-      <View className="flex-1 items-center justify-center bg-canvas px-6 dark:bg-night-950">
-        <Text className="font-sans-semibold text-lg text-ink dark:text-cloud">
+      <View className="flex-1 items-center justify-center bg-canvas px-6">
+        <Text className="font-sans-semibold text-lg text-ink">
           Item not found
         </Text>
         <Pressable onPress={() => router.back()} className="mt-3">
-          <Text className="font-sans-medium text-grape dark:text-grape-soft">
-            Go back
-          </Text>
+          <Text className="font-sans-medium text-bronze">Go back</Text>
         </Pressable>
       </View>
     );
   }
 
-  const added = has(product.id);
-
-  function reserve() {
-    add(product!.id);
-    Alert.alert(
-      'Added to your bag',
-      `${product!.name} — ${formatPeso(product!.pricePerDay)} / day. Checkout arrives in the next phase.`,
-    );
+  function checkDates() {
+    startDraft({
+      id: product!.id,
+      name: product!.name,
+      photo: product!.photos[0] ?? null,
+      pricePerDay: product!.pricePerDay,
+      deposit: product!.deposit,
+      cleaningBufferDays: product!.cleaningBufferDays,
+    });
+    router.push('/(app)/reserve/dates');
   }
 
   return (
-    <View className="flex-1 bg-canvas dark:bg-night-950">
+    <View className="flex-1 bg-canvas">
       <Hero
         product={product}
         insetTop={insets.top}
@@ -86,24 +85,22 @@ export default function ProductDetail() {
         showsVerticalScrollIndicator={false}
       >
         <View className="gap-1">
-          <Text className="font-sans-medium text-sm text-muted">
+          <Text className="font-sans-medium text-[11px] uppercase tracking-[2px] text-muted">
             {product.designer}
           </Text>
-          <Text className="font-sans-extrabold text-3xl text-ink dark:text-cloud">
+          <Text className="font-display-bold text-3xl text-ink">
             {product.name}
           </Text>
         </View>
 
         {product.swatches.length > 0 ? (
           <View className="flex-row items-center gap-3">
-            <Text className="font-sans-medium text-sm text-ink dark:text-cloud">
-              Colors
-            </Text>
+            <Text className="font-sans-medium text-sm text-ink">Colors</Text>
             <View className="flex-row gap-2">
               {product.swatches.map((hex) => (
                 <View
                   key={hex}
-                  className="h-6 w-6 rounded-full border border-black/10 dark:border-white/15"
+                  className="h-6 w-6 rounded-full border border-black/10"
                   style={{ backgroundColor: hex }}
                 />
               ))}
@@ -112,7 +109,7 @@ export default function ProductDetail() {
         ) : null}
 
         <View className="gap-2">
-          <Text className="font-sans-medium text-sm text-ink dark:text-cloud">
+          <Text className="font-sans-medium text-sm text-ink">
             {product.sizes.length > 0 ? 'Available sizes' : 'Size'}
           </Text>
           <View className="flex-row flex-wrap gap-2">
@@ -120,16 +117,16 @@ export default function ProductDetail() {
               product.sizes.map((size) => (
                 <View
                   key={size}
-                  className="rounded-full bg-canvas-subtle px-4 py-2 dark:bg-night-800"
+                  className="h-10 min-w-10 items-center justify-center rounded-full border border-hairline bg-surface px-4"
                 >
-                  <Text className="font-sans-semibold text-sm text-ink dark:text-cloud">
+                  <Text className="font-sans-semibold text-sm text-ink">
                     {size}
                   </Text>
                 </View>
               ))
             ) : (
-              <View className="rounded-full bg-canvas-subtle px-4 py-2 dark:bg-night-800">
-                <Text className="font-sans-semibold text-sm text-ink dark:text-cloud">
+              <View className="h-10 items-center justify-center rounded-full border border-hairline bg-surface px-4">
+                <Text className="font-sans-semibold text-sm text-ink">
                   One size
                 </Text>
               </View>
@@ -137,9 +134,9 @@ export default function ProductDetail() {
           </View>
         </View>
 
-        <View className="flex-row items-center gap-2 rounded-2xl bg-lilac px-4 py-3 dark:bg-night-800">
-          <Feather name="shield" size={16} color={GRAPE} />
-          <Text className="font-sans-medium text-sm text-ink dark:text-cloud">
+        <View className="flex-row items-center gap-2 rounded-2xl bg-canvas-subtle px-4 py-3">
+          <Feather name="shield" size={16} color={BRONZE} />
+          <Text className="font-sans-medium text-sm text-ink">
             {formatPeso(product.deposit)} refundable deposit
           </Text>
         </View>
@@ -150,22 +147,20 @@ export default function ProductDetail() {
       </ScrollView>
 
       <View
-        className="flex-row items-center gap-4 border-t border-black/5 px-6 pt-4 dark:border-white/10"
+        className="flex-row items-center gap-4 border-t border-hairline bg-canvas px-6 pt-4"
         style={{ paddingBottom: insets.bottom + 12 }}
       >
-        <View>
-          <Text className="font-sans-bold text-2xl text-ink dark:text-cloud">
+        <View className="gap-0.5">
+          <Text className="font-sans-semibold text-base text-ink">
             {formatPeso(product.pricePerDay)}
+            <Text className="font-sans text-xs text-muted"> / day</Text>
           </Text>
-          <Text className="font-sans-medium text-xs text-muted">per day</Text>
+          <Text className="font-sans text-xs text-muted">
+            + {formatPeso(product.deposit)} deposit
+          </Text>
         </View>
         <View className="flex-1">
-          <Button
-            label={added ? 'In your bag' : 'Reserve'}
-            variant={added ? 'secondary' : 'primary'}
-            disabled={added}
-            onPress={added ? undefined : reserve}
-          />
+          <Button label="Check dates" variant="commit" onPress={checkDates} />
         </View>
       </View>
     </View>
@@ -246,7 +241,7 @@ function Hero({
         {Array.from({ length: dotCount }).map((_, i) => (
           <View
             key={i}
-            className={`h-2 rounded-full ${i === page ? 'w-6 bg-grape' : 'w-2 bg-ink/20'}`}
+            className={`h-2 rounded-full ${i === page ? 'w-6 bg-bronze' : 'w-2 bg-ink/20'}`}
           />
         ))}
       </View>

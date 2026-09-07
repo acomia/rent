@@ -2,7 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-import { GRAPE } from '@/components/catalog/catalog-style';
+import { BRONZE } from '@/components/catalog/catalog-style';
 import { useAuth } from '@/features/auth/auth-context';
 
 /**
@@ -21,8 +21,8 @@ export default function AdminLayout() {
 
   if (loading || !isAdmin) {
     return (
-      <View className="flex-1 items-center justify-center bg-canvas dark:bg-night-950">
-        <ActivityIndicator color={GRAPE} />
+      <View className="flex-1 items-center justify-center bg-canvas">
+        <ActivityIndicator color={BRONZE} />
       </View>
     );
   }

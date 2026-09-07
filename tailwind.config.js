@@ -4,45 +4,66 @@ module.exports = {
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
-      // Pastel rental identity — a confident grape brand over four soft accents
-      // (purple/pink/blue/yellow), on clean neutrals. Token names stay stable
-      // across restyles; only the values move.
+      // Editorial rental identity (see DESIGN.md): a warm ivory ground, an
+      // antique-bronze primary action, and a warm-charcoal action for the
+      // highest-commitment step. Bronze proposes; charcoal commits.
+      //
+      // Photography is the only saturated colour in the app — no decorative
+      // tints. Status colour is never decorative, and no decorative surface
+      // borrows a status hue.
+      //
+      // Token names stay stable across restyles; only the values move.
       colors: {
-        grape: {
-          DEFAULT: '#8165CA', // primary brand — buttons, active toggle, links
-          deep: '#6B4FB0', // pressed
-          soft: '#9B85D6', // dark-mode brand fill
-        },
-        bubblegum: '#ED5C9D', // secondary accent — price, hearts, badges
-        sky: '#D2EDF6', // pastel surface (tiles)
-        butter: '#FDF1AA', // pastel surface (tiles)
-        lilac: '#EDE7FA', // purple-tint card
-        blush: '#FCE0EC', // pink-tint card
-        ink: '#1A1523', // primary text — warm near-black
+        // Grounds and text.
         canvas: {
-          DEFAULT: '#FFFFFF', // page bg (light)
-          subtle: '#F7F6FB', // alt page bg (light)
+          DEFAULT: '#F7F3EC', // page ground — warm ivory, never white
+          subtle: '#EDE7DC', // recessed fills: inputs, chips at rest, skeletons
         },
-        muted: '#6E6A7D', // secondary text — meets WCAG AA (4.5:1) on white
-        // Dark surfaces.
+        surface: '#FFFDF9', // raised cards and sheets
+        hairline: '#E5DDD0', // separates without outlining
+        ink: '#1C1A17', // primary text — warm near-black
+        muted: '#6F675B', // secondary text — AA (5.1:1) on canvas
+        // Actions.
+        bronze: {
+          DEFAULT: '#8A6F45', // primary action — AA (4.7:1) with white labels
+          deep: '#6F5836', // pressed
+          soft: '#E8DCC8', // secondary fill, rental-band tint
+        },
+        charcoal: '#1C1A17', // commit action: Check dates, selected size/date
+        // Status. Each is a pale fill plus an ink that passes AA on canvas.
+        // One meaning each, everywhere in the app.
+        pending: { DEFAULT: '#8A6114', soft: '#F7E9CE' },
+        confirmed: { DEFAULT: '#1F7A45', soft: '#DCEEE0' },
+        outnow: { DEFAULT: '#A2551F', soft: '#FAE3D2' },
+        cleaning: { DEFAULT: '#2A6389', soft: '#D9E7F2' },
+        overdue: { DEFAULT: '#A83232', soft: '#F8DDDD' },
+        settled: { DEFAULT: '#6F675B', soft: '#EAE6DE' },
+        // Dark surfaces. The board is light-only; dark stays warm rather than
+        // inverting to blue-black, so the identity survives at night.
         night: {
-          950: '#14121A', // canvas
-          900: '#1E1B26', // surface
-          800: '#29252F', // elevated
-          700: '#38333F', // border
+          950: '#14120F', // canvas
+          900: '#1E1B16', // surface
+          800: '#2A251E', // elevated
+          700: '#3A342A', // border
         },
-        cloud: '#F5F3F8', // text on dark
+        cloud: '#F2EDE4', // text on dark
+        'muted-dark': '#A79E90', // secondary text on dark — AA (6.5:1) on night-900
       },
-      // Poppins as a free Gilroy stand-in. React Native does NOT synthesize
-      // weights for runtime-loaded fonts, so each weight is its own family and
-      // gets its own utility (font-sans, font-sans-medium, …). Use these instead
+      // Two roles. Playfair Display carries the moments that matter (wordmark,
+      // screen titles, item names, the one big number); Inter does every label,
+      // row, button and sentence and should disappear.
+      //
+      // React Native does NOT synthesize weights for runtime-loaded fonts, so
+      // each weight is its own family with its own utility. Use these instead
       // of Tailwind's font-weight utilities.
       fontFamily: {
-        sans: ['Poppins_400Regular'],
-        'sans-medium': ['Poppins_500Medium'],
-        'sans-semibold': ['Poppins_600SemiBold'],
-        'sans-bold': ['Poppins_700Bold'],
-        'sans-extrabold': ['Poppins_800ExtraBold'],
+        sans: ['Inter_400Regular'],
+        'sans-medium': ['Inter_500Medium'],
+        'sans-semibold': ['Inter_600SemiBold'],
+        'sans-bold': ['Inter_700Bold'],
+        display: ['PlayfairDisplay_400Regular'],
+        'display-semibold': ['PlayfairDisplay_600SemiBold'],
+        'display-bold': ['PlayfairDisplay_700Bold'],
       },
     },
   },

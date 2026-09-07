@@ -1,15 +1,16 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Pressable, Text, View, useColorScheme } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { formatPeso, type Item } from '@/features/catalog/mock-data';
-import { CLOUD, INK, tintAccent, tintClass } from './catalog-style';
+import { INK, MUTED, tintClass } from './catalog-style';
 import { Glyph } from './glyph';
 
 /**
- * Grid product card: a pastel image panel with the item glyph, then name,
- * designer, per-day price, and an add-to-bag button. `added` swaps the plus for
- * a check so the cart state reads at a glance.
+ * Grid product card: a tall photo panel with a save affordance in the corner,
+ * then the item name and its per-day rate. The photograph is the only colour on
+ * the card — the panel behind it is neutral and only shows when there is no
+ * photo yet.
  */
 export function ProductCard({
   product,
@@ -22,9 +23,6 @@ export function ProductCard({
   onPress?: () => void;
   onAdd?: () => void;
 }) {
-  const scheme = useColorScheme();
-  const dark = scheme === 'dark';
-
   return (
     <Pressable
       accessibilityRole="button"
@@ -33,7 +31,7 @@ export function ProductCard({
       className="flex-1 gap-3 active:opacity-90"
     >
       <View
-        className={`aspect-[3/4] items-center justify-center overflow-hidden rounded-3xl dark:bg-night-800 ${tintClass[product.tint]}`}
+        className={`aspect-[3/4] items-center justify-center overflow-hidden rounded-2xl ${tintClass[product.tint]}`}
       >
         {product.photos[0] ? (
           <Image
@@ -44,45 +42,35 @@ export function ProductCard({
             accessibilityLabel={product.name}
           />
         ) : (
-          <Glyph
-            name={product.icon}
-            size={64}
-            color={dark ? tintAccent[product.tint] : INK}
-          />
+          <Glyph name={product.icon} size={56} color={MUTED} />
         )}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={added ? 'In your bag' : `Add ${product.name}`}
+          onPress={onAdd}
+          hitSlop={8}
+          className="absolute right-2.5 top-2.5 h-9 w-9 items-center justify-center rounded-full bg-surface/90 active:opacity-80"
+        >
+          <Feather
+            name={added ? 'check' : 'heart'}
+            size={17}
+            color={added ? '#1F7A45' : INK}
+          />
+        </Pressable>
       </View>
 
-      <View className="gap-0.5 px-1">
+      <View className="gap-1 px-0.5">
         <Text
           numberOfLines={1}
-          className="font-sans-semibold text-base text-ink dark:text-cloud"
+          className="font-display-semibold text-base text-ink"
         >
           {product.name}
         </Text>
-        <Text numberOfLines={1} className="font-sans text-xs text-muted">
-          {product.designer}
+        <Text className="font-sans-medium text-sm text-ink">
+          {formatPeso(product.pricePerDay)}
+          <Text className="font-sans text-xs text-muted"> / day</Text>
         </Text>
-        <View className="mt-1 flex-row items-center justify-between">
-          <Text className="font-sans-bold text-base text-grape dark:text-grape-soft">
-            {formatPeso(product.pricePerDay)}
-            <Text className="font-sans-medium text-xs text-muted"> / day</Text>
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={added ? 'In your bag' : `Add ${product.name}`}
-            onPress={onAdd}
-            hitSlop={8}
-            className={`h-9 w-9 items-center justify-center rounded-full active:opacity-80 ${
-              added ? 'bg-grape dark:bg-grape-soft' : 'bg-bubblegum'
-            }`}
-          >
-            <Feather
-              name={added ? 'check' : 'plus'}
-              size={18}
-              color={dark && added ? INK : CLOUD}
-            />
-          </Pressable>
-        </View>
       </View>
     </Pressable>
   );

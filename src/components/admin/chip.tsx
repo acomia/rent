@@ -2,8 +2,8 @@ import { Pressable, Text } from 'react-native';
 
 /**
  * A selectable pill used across the admin forms for single- and multi-select
- * choices (occasion tags, tint, icon, unit status). Grape fill when selected,
- * subtle surface otherwise — the same visual language as the catalog filter pills.
+ * choices (occasion tags, tint, icon, unit status). Charcoal fill when selected,
+ * hairline chip otherwise — the same language as the catalog filter pills.
  */
 export function Chip({
   label,
@@ -20,14 +20,14 @@ export function Chip({
       accessibilityState={{ selected }}
       onPress={onPress}
       className={`rounded-full px-4 py-2 active:opacity-80 ${
-        selected
-          ? 'bg-grape dark:bg-grape-soft'
-          : 'bg-canvas-subtle dark:bg-night-800'
+        selected ? 'bg-charcoal' : 'border border-hairline bg-surface'
       }`}
     >
       <Text
-        className={`font-sans-medium text-sm ${
-          selected ? 'text-white' : 'text-ink dark:text-cloud'
+        className={`text-sm ${
+          selected
+            ? 'font-sans-semibold text-white'
+            : 'font-sans-medium text-ink'
         }`}
       >
         {label}

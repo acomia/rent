@@ -20,7 +20,7 @@ import { Chip } from '@/components/admin/chip';
 import { Field } from '@/components/admin/field';
 import { IconPicker } from '@/components/admin/icon-picker';
 import { TintPicker } from '@/components/admin/tint-picker';
-import { GRAPE } from '@/components/catalog/catalog-style';
+import { BRONZE } from '@/components/catalog/catalog-style';
 import { SegmentedToggle } from '@/components/catalog/segmented-toggle';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
@@ -209,14 +209,14 @@ export default function AdminItemForm() {
 
   if (!isNew && existing.isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-canvas dark:bg-night-950">
-        <ActivityIndicator color={GRAPE} />
+      <View className="flex-1 items-center justify-center bg-canvas">
+        <ActivityIndicator color={BRONZE} />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-canvas dark:bg-night-950">
+    <View className="flex-1 bg-canvas">
       <AdminHeader
         title={isNew ? 'New item' : 'Edit item'}
         onBack={() => back()}
@@ -228,7 +228,7 @@ export default function AdminItemForm() {
             hitSlop={8}
             className="py-1 active:opacity-70"
           >
-            <Text className="font-sans-semibold text-base text-grape dark:text-grape-soft">
+            <Text className="font-sans-semibold text-base text-bronze">
               {isSubmitting ? 'Saving…' : 'Save'}
             </Text>
           </Pressable>
@@ -249,7 +249,7 @@ export default function AdminItemForm() {
           >
             {photos.map((url, index) => (
               <View key={url} className="gap-1">
-                <View className="h-28 w-24 overflow-hidden rounded-2xl bg-canvas-subtle dark:bg-night-800">
+                <View className="h-28 w-24 overflow-hidden rounded-2xl bg-canvas-subtle">
                   <Image
                     source={{ uri: url }}
                     style={{ width: '100%', height: '100%' }}
@@ -271,14 +271,14 @@ export default function AdminItemForm() {
                     onPress={() => movePhoto(index, -1)}
                     hitSlop={6}
                   >
-                    <Feather name="chevron-left" size={18} color="#6E6A7D" />
+                    <Feather name="chevron-left" size={18} color="#6F675B" />
                   </Pressable>
                   <Pressable
                     accessibilityLabel="Move right"
                     onPress={() => movePhoto(index, 1)}
                     hitSlop={6}
                   >
-                    <Feather name="chevron-right" size={18} color="#6E6A7D" />
+                    <Feather name="chevron-right" size={18} color="#6F675B" />
                   </Pressable>
                 </View>
               </View>
@@ -288,13 +288,13 @@ export default function AdminItemForm() {
               accessibilityLabel="Add photos"
               onPress={onAddPhotos}
               disabled={uploadPhotos.isPending}
-              className="h-28 w-24 items-center justify-center gap-1 rounded-2xl border border-dashed border-grape/40 dark:border-cloud/30"
+              className="h-28 w-24 items-center justify-center gap-1 rounded-2xl border border-dashed border-bronze/40"
             >
               {uploadPhotos.isPending ? (
-                <ActivityIndicator color={GRAPE} />
+                <ActivityIndicator color={BRONZE} />
               ) : (
                 <>
-                  <Feather name="plus" size={22} color={GRAPE} />
+                  <Feather name="plus" size={22} color={BRONZE} />
                   <Text className="font-sans text-xs text-muted">Add</Text>
                 </>
               )}
@@ -494,9 +494,9 @@ export default function AdminItemForm() {
           control={control}
           name="isActive"
           render={({ field }) => (
-            <View className="flex-row items-center justify-between rounded-2xl bg-canvas-subtle px-4 py-3 dark:bg-night-900">
+            <View className="flex-row items-center justify-between rounded-2xl bg-canvas-subtle px-4 py-3">
               <View className="flex-1 pr-3">
-                <Text className="font-sans-medium text-base text-ink dark:text-cloud">
+                <Text className="font-sans-medium text-base text-ink">
                   Visible in catalog
                 </Text>
                 <Text className="font-sans text-xs text-muted">
@@ -506,7 +506,7 @@ export default function AdminItemForm() {
               <Switch
                 value={field.value}
                 onValueChange={field.onChange}
-                trackColor={{ true: GRAPE }}
+                trackColor={{ true: BRONZE }}
               />
             </View>
           )}
@@ -518,7 +518,7 @@ export default function AdminItemForm() {
             {fields.map((unitField, index) => (
               <View
                 key={unitField.id}
-                className="gap-3 rounded-2xl bg-canvas-subtle p-3 dark:bg-night-900"
+                className="gap-3 rounded-2xl bg-canvas-subtle p-3"
               >
                 <View className="flex-row items-center gap-3">
                   <View className="flex-1">
@@ -556,9 +556,9 @@ export default function AdminItemForm() {
                     accessibilityLabel="Remove unit"
                     onPress={() => remove(index)}
                     hitSlop={6}
-                    className="mt-6 h-10 w-10 items-center justify-center rounded-full bg-blush dark:bg-night-800"
+                    className="mt-6 h-10 w-10 items-center justify-center rounded-full bg-canvas-subtle"
                   >
-                    <Feather name="trash-2" size={18} color="#ED5C9D" />
+                    <Feather name="trash-2" size={18} color={BRONZE} />
                   </Pressable>
                 </View>
 

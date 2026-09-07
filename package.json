@@ -1,8 +1,10 @@
 {
-  "name": "hiramda",
+  "name": "renta",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/playfair-display": "^0.4.2",
     "@expo-google-fonts/poppins": "^0.4.1",
     "@expo/ui": "~57.0.1",
     "@expo/vector-icons": "^15.1.1",

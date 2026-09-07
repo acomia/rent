@@ -1,3 +1,4 @@
+import { BRONZE, BRONZE_DEEP } from '@/components/catalog/catalog-style';
 import {
   ActivityIndicator,
   Pressable,
@@ -5,23 +6,35 @@ import {
   type PressableProps,
 } from 'react-native';
 
-type Variant = 'primary' | 'secondary' | 'outline' | 'ghost';
+/**
+ * Four variants, per DESIGN.md: bronze proposes (primary), charcoal commits
+ * (the highest-commitment inline action, e.g. Check dates). Secondary is a soft
+ * bronze fill, outline is a hairline.
+ */
+type Variant = 'primary' | 'secondary' | 'outline' | 'commit';
 
 const base =
-  'w-full flex-row items-center justify-center rounded-full px-5 py-4 active:opacity-90';
+  'w-full flex-row items-center justify-center rounded-2xl px-5 py-4 active:opacity-90';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-grape dark:bg-grape-soft',
-  secondary: 'bg-bubblegum',
-  outline: 'border border-grape/40 bg-transparent dark:border-cloud/30',
-  ghost: 'bg-transparent',
+  primary: 'bg-bronze',
+  secondary: 'bg-bronze-soft',
+  outline: 'border border-hairline bg-transparent',
+  commit: 'bg-charcoal',
 };
 
 const labelVariants: Record<Variant, string> = {
   primary: 'text-white',
-  secondary: 'text-white',
-  outline: 'text-grape dark:text-cloud',
-  ghost: 'text-grape dark:text-cloud',
+  secondary: 'text-bronze-deep',
+  outline: 'text-ink',
+  commit: 'text-white',
+};
+
+const spinnerColor: Record<Variant, string> = {
+  primary: '#FFFFFF',
+  secondary: BRONZE_DEEP,
+  outline: BRONZE,
+  commit: '#FFFFFF',
 };
 
 type Props = PressableProps & {
@@ -47,13 +60,7 @@ export function Button({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator
-          color={
-            variant === 'primary' || variant === 'secondary'
-              ? '#fff'
-              : '#8165CA'
-          }
-        />
+        <ActivityIndicator color={spinnerColor[variant]} />
       ) : (
         <Text
           className={`font-sans-semibold text-base ${labelVariants[variant]}`}

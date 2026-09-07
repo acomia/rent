@@ -1,12 +1,13 @@
+import { Feather } from '@expo/vector-icons';
 import { type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { INK } from '@/components/catalog/catalog-style';
+
 /**
  * Shared header for the admin screens: a Back affordance, a centred title, and
- * an optional right-side action (e.g. Save / Add). Mirrors the custom header on
- * the Profile screen so the admin area feels part of the same app rather than a
- * stock navigation bar.
+ * an optional right-side action (e.g. Save / Add).
  */
 export function AdminHeader({
   title,
@@ -20,32 +21,33 @@ export function AdminHeader({
   const insets = useSafeAreaInsets();
   return (
     <View
-      className="flex-row items-center justify-between px-5 pb-3"
+      className="flex-row items-center justify-between border-b border-hairline px-5 pb-3"
       style={{ paddingTop: insets.top + 12 }}
     >
       {onBack ? (
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={onBack}
           hitSlop={8}
-          className="min-w-16 py-1 active:opacity-70"
+          className="h-10 w-10 items-center justify-center rounded-full border border-hairline bg-surface active:opacity-70"
         >
-          <Text className="font-sans text-base text-grape dark:text-grape-soft">
-            Back
-          </Text>
+          <Feather name="chevron-left" size={19} color={INK} />
         </Pressable>
       ) : (
-        <View className="min-w-16" />
+        <View className="h-10 w-10" />
       )}
 
       <Text
         numberOfLines={1}
-        className="flex-1 text-center font-sans-semibold text-lg text-ink dark:text-cloud"
+        className="flex-1 text-center font-display-semibold text-xl text-ink"
       >
         {title}
       </Text>
 
-      <View className="min-w-16 items-end">{right}</View>
+      <View className="min-h-10 min-w-10 items-end justify-center">
+        {right}
+      </View>
     </View>
   );
 }

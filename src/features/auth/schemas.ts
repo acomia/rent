@@ -77,9 +77,33 @@ export const otpSchema = z.object({
     .regex(/^\d{6}$/, 'Enter the 6-digit code'),
 });
 
-export const profileSchema = z.object({
+/**
+ * The Edit-profile form.
+ *
+ * `email` is absent on purpose — it mirrors `auth.users.email`, and changing it
+ * for real is an auth operation that re-verifies, not a profile field. The
+ * screen shows it read-only.
+ *
+ * Date of birth is entered as YYYY-MM-DD and validated here rather than trusted
+ * to a picker, because there is no cross-platform date picker in the stack yet.
+ * The DB has its own sanity CHECK (`customers_dob_sane`), so a bad value cannot
+ * land even if this is bypassed.
+ */
+export const editProfileSchema = z.object({
   fullName: z.string().trim().min(2, 'Enter your full name').max(120),
   phone: phField,
+  dateOfBirth: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
+    .refine((v) => {
+      const d = new Date(`${v}T00:00:00`);
+      if (Number.isNaN(d.getTime())) return false;
+      const year = d.getFullYear();
+      return d < new Date() && year > 1900;
+    }, 'Enter a real date in the past')
+    .optional()
+    .or(z.literal('')),
   address: z.string().trim().max(300).optional().or(z.literal('')),
 });
 
@@ -88,4 +112,4 @@ export type LoginForm = z.infer<typeof loginSchema>;
 export type ForgotRequestForm = z.infer<typeof forgotRequestSchema>;
 export type ForgotResetForm = z.infer<typeof forgotResetSchema>;
 export type OtpForm = z.infer<typeof otpSchema>;
-export type ProfileForm = z.infer<typeof profileSchema>;
+export type EditProfileForm = z.infer<typeof editProfileSchema>;

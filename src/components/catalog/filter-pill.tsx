@@ -1,14 +1,13 @@
 import { Feather } from '@expo/vector-icons';
-import { Pressable, Text, useColorScheme } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
-import { CLOUD, INK } from './catalog-style';
+import { INK, MUTED } from './catalog-style';
 
 type FeatherName = keyof typeof Feather.glyphMap;
 
 /**
- * Rounded filter pill for the listing header. `active` fills it with grape; an
- * optional leading icon or trailing chevron matches the two pill styles in the
- * reference (a solid "Price" filter and an outlined "Rent" dropdown).
+ * Filter chip in its two states: a hairline chip at rest, and an ink-filled chip
+ * when selected. Selection is carried by fill and weight, not colour alone.
  */
 export function FilterPill({
   label,
@@ -23,25 +22,31 @@ export function FilterPill({
   active?: boolean;
   onPress?: () => void;
 }) {
-  const dark = useColorScheme() === 'dark';
-  const fg = active ? CLOUD : dark ? CLOUD : INK;
+  const fg = active ? '#FFFFFF' : INK;
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onPress={onPress}
-      className={`h-12 flex-row items-center gap-2 rounded-full px-5 active:opacity-80 ${
-        active
-          ? 'bg-grape dark:bg-grape-soft'
-          : 'bg-canvas-subtle dark:bg-night-800'
+      className={`h-10 flex-row items-center gap-2 rounded-full px-4 active:opacity-80 ${
+        active ? 'bg-charcoal' : 'border border-hairline bg-surface'
       }`}
     >
-      {icon ? <Feather name={icon} size={16} color={fg} /> : null}
-      <Text className="font-sans-semibold text-sm" style={{ color: fg }}>
+      {icon ? <Feather name={icon} size={15} color={fg} /> : null}
+      <Text
+        className={`text-sm ${active ? 'font-sans-semibold' : 'font-sans-medium'}`}
+        style={{ color: fg }}
+      >
         {label}
       </Text>
-      {chevron ? <Feather name="chevron-down" size={16} color={fg} /> : null}
+      {chevron ? (
+        <Feather
+          name="chevron-down"
+          size={15}
+          color={active ? '#FFFFFF' : MUTED}
+        />
+      ) : null}
     </Pressable>
   );
 }

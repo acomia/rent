@@ -11,9 +11,7 @@ export function Field({
 }) {
   return (
     <View className="gap-2">
-      <Text className="font-sans-medium text-sm text-ink dark:text-cloud">
-        {label}
-      </Text>
+      <Text className="font-sans-medium text-sm text-ink">{label}</Text>
       {children}
     </View>
   );

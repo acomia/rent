@@ -1,13 +1,13 @@
-import { Pressable, Text, View, useColorScheme } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import type { Category } from '@/features/catalog/mock-data';
-import { CLOUD, INK, tintAccent, tintClass } from './catalog-style';
+import { MUTED } from './catalog-style';
 import { Glyph } from './glyph';
 
 /**
- * Pastel category tile: oversized line icon over a name and item count. In dark
- * mode the pastel fill drops to a night surface and the icon takes the tint's
- * accent color so each category still reads distinctly.
+ * Category tile: a tall neutral panel carrying the category glyph, with the name
+ * and item count set beneath it on the ivory ground. No decorative fill — in
+ * this design the photography is the only colour, so the panel stays quiet.
  */
 export function CategoryTile({
   category,
@@ -18,31 +18,21 @@ export function CategoryTile({
   count: number;
   onPress?: () => void;
 }) {
-  const scheme = useColorScheme();
-  const dark = scheme === 'dark';
-  const iconColor = dark ? tintAccent[category.tint] : INK;
-
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${category.name}, ${count} items`}
       onPress={onPress}
-      className={`min-h-[150px] flex-1 justify-between rounded-3xl p-5 active:opacity-90 dark:bg-night-800 ${tintClass[category.tint]}`}
+      className="flex-1 gap-3 active:opacity-90"
     >
-      <Glyph name={category.icon} size={40} color={iconColor} />
-      <View>
-        <Text
-          className="font-sans-bold text-lg text-ink"
-          style={dark ? { color: CLOUD } : undefined}
-        >
+      <View className="aspect-[4/3] items-center justify-center rounded-2xl border border-hairline bg-canvas-subtle">
+        <Glyph name={category.icon} size={38} color={MUTED} />
+      </View>
+      <View className="gap-0.5 px-0.5">
+        <Text className="font-sans-semibold text-base text-ink">
           {category.name}
         </Text>
-        <Text
-          className="font-sans-medium text-sm text-ink/60"
-          style={dark ? { color: '#8A8698' } : undefined}
-        >
-          {count} items
-        </Text>
+        <Text className="font-sans text-xs text-muted">{count} items</Text>
       </View>
     </Pressable>
   );

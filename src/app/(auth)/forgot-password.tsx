@@ -237,7 +237,7 @@ function ResetStage({
       />
       <Text
         onPress={onResend}
-        className="self-center py-2 font-sans-medium text-sm text-grape dark:text-grape-soft"
+        className="self-center py-2 font-sans-medium text-sm text-bronze"
       >
         Use a different email
       </Text>
