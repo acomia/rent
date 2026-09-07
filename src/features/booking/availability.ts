@@ -1,4 +1,4 @@
-import { daysBetween, startOfDay, toKey } from './dates';
+import { daysBetween, todayManila, toKey } from './dates';
 import type { DayState } from './types';
 
 /**
@@ -31,7 +31,9 @@ export function dayState(itemId: string, date: Date, today: Date): DayState {
   return 'available';
 }
 
-/** Today in the device's timezone. The server equivalent is `today_manila()`. */
-export function today(): Date {
-  return startOfDay(new Date());
-}
+/**
+ * Re-exported so the ten screens that need "today" keep one import site.
+ * The implementation is Manila-pinned in `dates.ts` to match the database's
+ * `today_manila()`; this module owns none of it.
+ */
+export const today = todayManila;

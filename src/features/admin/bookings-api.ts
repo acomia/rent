@@ -13,16 +13,7 @@
 import { daysBetween, fromKey } from '@/features/booking/dates';
 import { quote } from '@/features/booking/pricing';
 import type { FulfillmentType } from '@/features/booking/types';
-import { supabase } from '@/lib/supabase';
-
-function requireDb() {
-  if (!supabase) {
-    throw new Error(
-      'Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_* to .env.',
-    );
-  }
-  return supabase;
-}
+import { requireDb, supabase } from '@/lib/supabase';
 
 /**
  * The shop's view of a booking's lifecycle — the full ramp, not the coarser set
@@ -252,4 +243,34 @@ export async function updateFittingStatus(input: {
     .update({ fitting_status: input.status })
     .eq('reference', input.reference);
   if (error) throw error;
+}
+
+/**
+ * What each worklist means — one definition, used by the dashboard, the booking
+ * queue and the returns list.
+ *
+ * "Overdue" was previously defined in the dashboard AND again in returns, and
+ * "needs action" appeared four times across two files; the two screens could
+ * disagree after a one-sided edit. These stay client-side for now, but they are
+ * the seam a DB view would replace.
+ */
+export function needsAction(b: { status: AdminBookingStatus }): boolean {
+  return b.status === 'pending' || b.status === 'hold';
+}
+
+export function isOut(b: { status: AdminBookingStatus }): boolean {
+  return b.status === 'picked_up' || b.status === 'rented';
+}
+
+/** Out, and past its return date in Manila. */
+export function isOverdue(
+  b: { status: AdminBookingStatus; ret: string },
+  today: Date,
+): boolean {
+  return isOut(b) && daysBetween(today, fromKey(b.ret)) < 0;
+}
+
+/** Agreed but not yet settled at the counter. */
+export function owesBalance(b: { status: AdminBookingStatus }): boolean {
+  return b.status === 'approved' || isOut(b);
 }

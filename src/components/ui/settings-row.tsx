@@ -6,6 +6,7 @@ import {
   HAIRLINE,
   INK,
   MUTED,
+  OVERDUE,
 } from '@/components/catalog/catalog-style';
 
 type FeatherName = keyof typeof Feather.glyphMap;
@@ -70,7 +71,7 @@ export function SettingsRow({
       }
     >
       {icon ? (
-        <Feather name={icon} size={19} color={destructive ? '#A83232' : INK} />
+        <Feather name={icon} size={19} color={destructive ? OVERDUE : INK} />
       ) : null}
       <View className="flex-1 gap-0.5">
         <Text

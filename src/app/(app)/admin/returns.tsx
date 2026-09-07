@@ -1,12 +1,14 @@
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { AdminHeader } from '@/components/admin/admin-header';
 import { BookingRow } from '@/components/admin/booking-row';
 import { BRONZE } from '@/components/catalog/catalog-style';
+import { isOut, isOverdue } from '@/features/admin/bookings-api';
 import { useAdminBookings } from '@/features/admin/bookings-hooks';
 import { today as todayFn } from '@/features/booking/availability';
-import { daysBetween, fromKey } from '@/features/booking/dates';
+import { daysBetween, fromKey, toKey } from '@/features/booking/dates';
 
 /**
  * What is currently out, ordered by how late it is.
@@ -20,11 +22,16 @@ export default function AdminReturns() {
   const today = todayFn();
   const { data = [], isLoading, refetch, isRefetching } = useAdminBookings();
 
-  const out = data
-    .filter((b) => b.status === 'picked_up' || b.status === 'rented')
-    .sort((a, b) => a.ret.localeCompare(b.ret));
-
-  const overdue = out.filter((b) => daysBetween(today, fromKey(b.ret)) < 0);
+  const todayKey = toKey(today);
+  const out = useMemo(
+    () => data.filter(isOut).sort((a, b) => a.ret.localeCompare(b.ret)),
+    [data],
+  );
+  const overdueCount = useMemo(
+    () => out.filter((b) => isOverdue(b, today)).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [out, todayKey],
+  );
 
   return (
     <View className="flex-1 bg-canvas">
@@ -41,11 +48,11 @@ export default function AdminReturns() {
           />
         }
       >
-        {overdue.length > 0 ? (
+        {overdueCount > 0 ? (
           <View className="rounded-2xl bg-overdue-soft p-4">
             <Text className="font-sans-medium text-sm text-overdue">
-              {overdue.length} {overdue.length === 1 ? 'item is' : 'items are'}{' '}
-              past their return date.
+              {overdueCount} {overdueCount === 1 ? 'item is' : 'items are'} past
+              their return date.
             </Text>
           </View>
         ) : null}

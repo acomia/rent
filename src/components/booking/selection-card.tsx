@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { BRONZE } from '@/components/catalog/catalog-style';
+import { BRONZE, RING } from '@/components/catalog/catalog-style';
 
 /**
  * A radio-style option card: title, one line of explanation, and a filled ring
@@ -31,7 +31,7 @@ export function SelectionCard({
     >
       <View
         className="mt-0.5 h-5 w-5 items-center justify-center rounded-full border-2"
-        style={{ borderColor: selected ? BRONZE : '#C9C0B1' }}
+        style={{ borderColor: selected ? BRONZE : RING }}
       >
         {selected ? (
           <View

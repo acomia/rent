@@ -45,6 +45,11 @@ type AuthState = {
   /** DEV-ONLY: skip auth and treat the app as signed in. No-op in production builds. */
   enableDevBypass: () => void;
   refreshCustomer: () => Promise<void>;
+  /**
+   * Commit a row the caller already has — `updateCustomer` returns the updated
+   * row, so a write followed by `refreshCustomer()` was a wasted round trip.
+   */
+  commitCustomer: (next: Customer) => void;
   signOut: () => Promise<void>;
 };
 
@@ -156,6 +161,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [loadCustomer, session?.user.id],
   );
 
+  const commitCustomer = useCallback((next: Customer) => {
+    setCustomer(next);
+  }, []);
+
   const enableDevBypass = useCallback(() => {
     if (__DEV__) setDevBypass(true);
   }, []);
@@ -180,6 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       devBypass,
       enableDevBypass,
       refreshCustomer,
+      commitCustomer,
       signOut,
     }),
     [
@@ -192,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       devBypass,
       enableDevBypass,
       refreshCustomer,
+      commitCustomer,
       signOut,
     ],
   );

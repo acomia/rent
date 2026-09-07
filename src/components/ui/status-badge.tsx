@@ -1,5 +1,7 @@
 import { Text, View } from 'react-native';
 
+import type { BookingStatus } from '@/features/booking/types';
+
 /**
  * The five booking states plus a settled/past neutral, drawn as pale pills with
  * matching ink. Status colour carries exactly one meaning across the app, and is
@@ -49,3 +51,23 @@ export function StatusBadge({
     </View>
   );
 }
+
+/**
+ * The customer's booking lifecycle → badge tone.
+ *
+ * Lives beside the `styles` record it maps into, so adding a state means
+ * touching one file. Two screens previously carried byte-identical private
+ * copies, which meant a new state rendered in one and crashed the other.
+ *
+ * The shop's nine-state equivalent is `ADMIN_STATUS` in
+ * `components/admin/booking-row.tsx` — deliberately separate, because the two
+ * audiences see different granularity.
+ */
+export const CUSTOMER_STATUS: Record<BookingStatus, Status> = {
+  pending: 'pending',
+  confirmed: 'confirmed',
+  outnow: 'outnow',
+  returned: 'cleaning',
+  completed: 'settled',
+  cancelled: 'settled',
+};

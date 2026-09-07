@@ -101,6 +101,43 @@ export function formatTime(d: Date): string {
 }
 
 /**
+ * Today, as a calendar day in Manila — the timezone the shop operates in.
+ *
+ * `new Date()` gives the DEVICE's day, which is a different day for anyone
+ * travelling or with a skewed clock: the calendar would offer a date the
+ * database then refuses (it checks `today_manila()`), and the shop's overdue
+ * count would disagree with the shop's reality. Computed locally via `Intl`
+ * rather than fetched, so it costs nothing and works offline.
+ */
+export function todayManila(): Date {
+  const key = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+  return fromKey(key);
+}
+
+/**
+ * The days a returned item is out of circulation. Blocked, but not booked —
+ * the distinction the rental band draws, and the window the return flow shows.
+ */
+export function cleaningWindow(
+  ret: Date,
+  cleaningDays: number,
+): { start: Date; end: Date; bookableAgain: Date } | null {
+  if (cleaningDays <= 0) {
+    return null;
+  }
+  return {
+    start: addDays(ret, 1),
+    end: addDays(ret, cleaningDays),
+    bookableAgain: addDays(ret, cleaningDays + 1),
+  };
+}
+
+/**
  * The grid for one month: six rows of seven, padded with nulls so the first of
  * the month lands on its real weekday.
  */

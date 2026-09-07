@@ -1,4 +1,9 @@
-import { supabase } from '@/lib/supabase';
+import {
+  extensionFor,
+  requireDb,
+  supabase,
+  uploadToBucket,
+} from '@/lib/supabase';
 
 /**
  * Row shape of `public.customers` (see `src/db/0001_customers.sql`).
@@ -87,30 +92,17 @@ export async function uploadAvatar(
   localUri: string,
   contentType = 'image/jpeg',
 ): Promise<string> {
-  if (!supabase) throw new Error('Supabase is not configured.');
-  const ext = contentType.includes('png')
-    ? 'png'
-    : contentType.includes('webp')
-      ? 'webp'
-      : 'jpg';
   const uid = `${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`}`;
-  const path = `${userId}/${uid}.${ext}`;
-
-  const arrayBuffer = await fetch(localUri).then((res) => res.arrayBuffer());
-  const { error } = await supabase.storage
-    .from(AVATAR_BUCKET)
-    .upload(path, arrayBuffer, { contentType, upsert: false });
-  if (error) throw error;
-
-  return supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
+  const path = `${userId}/${uid}.${extensionFor(contentType)}`;
+  return uploadToBucket(AVATAR_BUCKET, path, localUri, contentType);
 }
 
 export async function updateCustomer(
   userId: string,
   patch: CustomerUpdate,
 ): Promise<Customer> {
-  if (!supabase) throw new Error('Supabase is not configured.');
-  const { data, error } = await supabase
+  const db = requireDb();
+  const { data, error } = await db
     .from('customers')
     .update(patch)
     .eq('id', userId)

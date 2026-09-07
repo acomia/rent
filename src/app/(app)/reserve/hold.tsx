@@ -5,7 +5,7 @@ import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BookingCard } from '@/components/booking/booking-card';
-import { FlowHeader } from '@/components/booking/flow-header';
+import { FlowHeader, NoDraft } from '@/components/booking/flow-header';
 import { BRONZE } from '@/components/catalog/catalog-style';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/features/booking/booking-context';
@@ -32,13 +32,7 @@ export default function Hold() {
   }, []);
 
   if (!draft?.pickup || !draft.ret) {
-    return (
-      <View className="flex-1 items-center justify-center bg-canvas px-8">
-        <Text className="text-center font-sans text-base text-muted">
-          Choose your dates first.
-        </Text>
-      </View>
-    );
+    return <NoDraft />;
   }
 
   const days = daysBetween(fromKey(draft.pickup), fromKey(draft.ret)) + 1;

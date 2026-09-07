@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useBottomTabBarHeight } from 'expo-router/js-tabs';
+import { useMemo } from 'react';
 import {
   Pressable,
   RefreshControl,
@@ -10,9 +11,20 @@ import {
 
 import { ShopHeader } from '@/components/admin/shop-header';
 import { BRONZE } from '@/components/catalog/catalog-style';
+import {
+  isOut,
+  isOverdue,
+  needsAction,
+  owesBalance,
+} from '@/features/admin/bookings-api';
 import { useAdminBookings } from '@/features/admin/bookings-hooks';
 import { today as todayFn } from '@/features/booking/availability';
-import { daysBetween, formatDate, fromKey } from '@/features/booking/dates';
+import {
+  daysBetween,
+  formatDate,
+  fromKey,
+  toKey,
+} from '@/features/booking/dates';
 
 type Tone = 'overdue' | 'pending' | 'outnow' | 'cleaning' | 'neutral';
 
@@ -100,38 +112,37 @@ export default function AdminDashboard() {
   const router = useRouter();
   const tabBarHeight = useBottomTabBarHeight();
   const today = todayFn();
+  // `todayFn()` returns a fresh Date each render; the day key is what the memo
+  // below actually depends on.
+  const todayKey = toKey(today);
   const { data = [], isRefetching, refetch } = useAdminBookings();
 
-  const overdue = data.filter(
-    (b) =>
-      (b.status === 'picked_up' || b.status === 'rented') &&
-      daysBetween(today, fromKey(b.ret)) < 0,
-  ).length;
-
-  const pickupsToday = data.filter(
-    (b) =>
-      b.status === 'approved' && daysBetween(today, fromKey(b.pickup)) === 0,
-  ).length;
-
-  const returnsToday = data.filter(
-    (b) =>
-      (b.status === 'picked_up' || b.status === 'rented') &&
-      daysBetween(today, fromKey(b.ret)) === 0,
-  ).length;
-
-  const pendingApprovals = data.filter(
-    (b) => b.status === 'pending' || b.status === 'hold',
-  ).length;
-
-  // Until `payments` lands in Phase 5 there is nothing to reconcile against, so
-  // this counts bookings that have been agreed but whose balance is still owed
-  // at the counter. It will become a join on `payments`, not a longer guess.
-  const unpaidBalances = data.filter(
-    (b) =>
-      b.status === 'approved' ||
-      b.status === 'picked_up' ||
-      b.status === 'rented',
-  ).length;
+  // One pass instead of five, and only when the data changes. Each of the old
+  // passes built a throwaway array and re-parsed every booking's return date,
+  // on every render — including each refetch flip and each tab focus.
+  const counts = useMemo(() => {
+    const c = {
+      overdue: 0,
+      pickupsToday: 0,
+      returnsToday: 0,
+      pendingApprovals: 0,
+      unpaidBalances: 0,
+    };
+    for (const b of data) {
+      if (isOverdue(b, today)) c.overdue += 1;
+      if (
+        b.status === 'approved' &&
+        daysBetween(today, fromKey(b.pickup)) === 0
+      )
+        c.pickupsToday += 1;
+      if (isOut(b) && daysBetween(today, fromKey(b.ret)) === 0)
+        c.returnsToday += 1;
+      if (needsAction(b)) c.pendingApprovals += 1;
+      if (owesBalance(b)) c.unpaidBalances += 1;
+    }
+    return c;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, todayKey]);
 
   const toBookings = () => router.push('/admin/bookings');
   const toReturns = () => router.push('/admin/returns');
@@ -169,20 +180,20 @@ export default function AdminDashboard() {
         <View className="gap-3">
           <View className="flex-row gap-3">
             <Stat
-              count={overdue}
+              count={counts.overdue}
               label="Overdue"
               tone="overdue"
               weight={0.72}
               onPress={toReturns}
             />
             <Stat
-              count={pickupsToday}
+              count={counts.pickupsToday}
               label={"Today's\npickups"}
               tone="neutral"
               onPress={toBookings}
             />
             <Stat
-              count={returnsToday}
+              count={counts.returnsToday}
               label={"Today's\nreturns"}
               tone="neutral"
               onPress={toReturns}
@@ -190,14 +201,14 @@ export default function AdminDashboard() {
           </View>
           <View className="flex-row gap-3">
             <Stat
-              count={pendingApprovals}
+              count={counts.pendingApprovals}
               label={'Pending\napprovals'}
               tone="cleaning"
               height={124}
               onPress={toBookings}
             />
             <Stat
-              count={unpaidBalances}
+              count={counts.unpaidBalances}
               label={'Unpaid\nbalances'}
               tone="pending"
               height={124}
@@ -206,7 +217,7 @@ export default function AdminDashboard() {
           </View>
         </View>
 
-        {overdue === 0 && pendingApprovals === 0 ? (
+        {counts.overdue === 0 && counts.pendingApprovals === 0 ? (
           <Text className="font-sans text-sm leading-5 text-muted">
             Nothing needs you right now.
           </Text>

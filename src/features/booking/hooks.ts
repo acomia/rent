@@ -29,9 +29,12 @@ export function useDayStates(itemId: string | undefined, from: Date, to: Date) {
     queryKey: bookingKeys.days(itemId ?? '', toKey(from), toKey(to)),
     queryFn: () => fetchDayStates(itemId as string, from, to),
     enabled: Boolean(itemId),
-    // Availability is the one thing that must not be stale — someone else may
-    // have taken the slot while this screen sat open.
-    staleTime: 0,
+    // Availability must not go stale while the screen sits open — someone else
+    // may take the slot. But the window overlaps by two months as the customer
+    // steps through the calendar, so `0` refetched months it had just loaded.
+    // A few seconds keeps stepping cheap without ever serving a stale answer to
+    // a fresh visit; the exclusion constraint is the real arbiter regardless.
+    staleTime: 15_000,
   });
 }
 

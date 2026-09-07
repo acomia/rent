@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FlowHeader } from '@/components/booking/flow-header';
+import { FlowHeader, NoDraft } from '@/components/booking/flow-header';
 import {
   PAYMENT_METHODS,
   PaymentMethodRow,
@@ -12,8 +12,7 @@ import {
 import { MUTED } from '@/components/catalog/catalog-style';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/features/booking/booking-context';
-import { daysBetween, fromKey } from '@/features/booking/dates';
-import { quote } from '@/features/booking/pricing';
+import { quoteFromDraft } from '@/features/booking/pricing';
 import { formatPeso } from '@/features/catalog/types';
 
 /** Screen 14 — payment method. */
@@ -24,21 +23,11 @@ export default function Payment() {
   const [method, setMethod] = useState<string>('gcash');
 
   if (!draft?.pickup || !draft.ret) {
-    return (
-      <View className="flex-1 items-center justify-center bg-canvas px-8">
-        <Text className="text-center font-sans text-base text-muted">
-          Choose your dates first.
-        </Text>
-      </View>
-    );
+    return <NoDraft />;
   }
 
-  const days = daysBetween(fromKey(draft.pickup), fromKey(draft.ret)) + 1;
-  const q = quote({
-    pricePerDay: draft.pricePerDay,
-    deposit: draft.deposit,
-    days,
-  });
+  const q = quoteFromDraft(draft);
+  if (!q) return <NoDraft />;
 
   return (
     <View className="flex-1 bg-canvas">

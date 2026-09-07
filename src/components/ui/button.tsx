@@ -1,3 +1,4 @@
+import { BRONZE, BRONZE_DEEP } from '@/components/catalog/catalog-style';
 import {
   ActivityIndicator,
   Pressable,
@@ -31,8 +32,8 @@ const labelVariants: Record<Variant, string> = {
 
 const spinnerColor: Record<Variant, string> = {
   primary: '#FFFFFF',
-  secondary: '#6F5836',
-  outline: '#8A6F45',
+  secondary: BRONZE_DEEP,
+  outline: BRONZE,
   commit: '#FFFFFF',
 };
 

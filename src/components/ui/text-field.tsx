@@ -1,4 +1,6 @@
 import { forwardRef, useState } from 'react';
+
+import { PLACEHOLDER } from '@/components/catalog/catalog-style';
 import { Text, TextInput, View, type TextInputProps } from 'react-native';
 
 type Props = TextInputProps & {
@@ -29,7 +31,7 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
       <Text className="font-sans-medium text-sm text-ink">{label}</Text>
       <TextInput
         ref={ref}
-        placeholderTextColor="#9A9184"
+        placeholderTextColor={PLACEHOLDER}
         className={`rounded-2xl border font-sans ${border} bg-canvas-subtle px-4 py-4 text-base text-ink`}
         {...rest}
         onFocus={(e) => {

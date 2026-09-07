@@ -6,8 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AdminHeader } from '@/components/admin/admin-header';
 import { ADMIN_STATUS } from '@/components/admin/booking-row';
+import { DetailRow } from '@/components/booking/money-block';
 import { RentalBand } from '@/components/booking/rental-band';
-import { MUTED } from '@/components/catalog/catalog-style';
+import { MUTED, PLACEHOLDER } from '@/components/catalog/catalog-style';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { AdminAction } from '@/features/admin/bookings-api';
@@ -27,15 +28,6 @@ const ACTION_LABEL: Record<AdminAction, string> = {
   cancel: 'Cancel booking',
   mark_picked_up: 'Mark as picked up',
 };
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <View className="flex-row items-center justify-between py-2">
-      <Text className="font-sans text-sm text-muted">{label}</Text>
-      <Text className="font-sans-medium text-sm text-ink">{value}</Text>
-    </View>
-  );
-}
 
 /**
  * The shop's decision screen for one booking.
@@ -178,13 +170,16 @@ export default function AdminBookingDetail() {
         </View>
 
         <View className="divide-y divide-hairline">
-          <Row label="Pickup" value={formatDate(fromKey(booking.pickup))} />
-          <Row label="Return" value={formatDate(fromKey(booking.ret))} />
-          <Row
+          <DetailRow
+            label="Pickup"
+            value={formatDate(fromKey(booking.pickup))}
+          />
+          <DetailRow label="Return" value={formatDate(fromKey(booking.ret))} />
+          <DetailRow
             label="Days"
             value={`${booking.days} ${booking.days === 1 ? 'day' : 'days'}`}
           />
-          <Row
+          <DetailRow
             label="Fulfilment"
             value={
               booking.fulfillment === 'fitting'
@@ -192,8 +187,8 @@ export default function AdminBookingDetail() {
                 : 'Shop pickup'
             }
           />
-          <Row label="Rental fee" value={formatPeso(booking.rentalFee)} />
-          <Row
+          <DetailRow label="Rental fee" value={formatPeso(booking.rentalFee)} />
+          <DetailRow
             label="Deposit (refundable)"
             value={formatPeso(booking.deposit)}
           />
@@ -261,7 +256,7 @@ export default function AdminBookingDetail() {
               value={reason}
               onChangeText={setReason}
               placeholder="e.g. This gown is already promised for those dates."
-              placeholderTextColor="#9A9184"
+              placeholderTextColor={PLACEHOLDER}
               multiline
               className="min-h-[88px] rounded-2xl border border-hairline bg-canvas-subtle p-3 font-sans text-base text-ink"
             />

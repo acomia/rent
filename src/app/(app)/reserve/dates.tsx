@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FlowHeader } from '@/components/booking/flow-header';
+import { FlowHeader, NoDraft } from '@/components/booking/flow-header';
 import {
   CalendarLegend,
   MonthCalendar,
@@ -59,13 +59,7 @@ export default function SelectDates() {
   );
 
   if (!draft) {
-    return (
-      <View className="flex-1 items-center justify-center bg-canvas px-8">
-        <Text className="text-center font-sans text-base text-muted">
-          Start from an item to choose your dates.
-        </Text>
-      </View>
-    );
+    return <NoDraft />;
   }
 
   const days =
@@ -103,7 +97,13 @@ export default function SelectDates() {
           selection={selection}
           onChange={setSelection}
           states={states}
-          onMonthChange={(year, month) => setCursor({ year, month })}
+          onMonthChange={(year, month) =>
+            // Bail when the month is unchanged: committing a fresh object would
+            // re-render regardless, since React compares with Object.is.
+            setCursor((c) =>
+              c.year === year && c.month === month ? c : { year, month },
+            )
+          }
         />
         <CalendarLegend />
         {selection.pickup && selection.ret && !bookable ? (

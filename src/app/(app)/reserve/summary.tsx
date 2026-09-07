@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BookingCard } from '@/components/booking/booking-card';
-import { FlowHeader } from '@/components/booking/flow-header';
+import { FlowHeader, NoDraft } from '@/components/booking/flow-header';
 import { MoneyBlock } from '@/components/booking/money-block';
 import { RentalBand } from '@/components/booking/rental-band';
 import { Button } from '@/components/ui/button';
@@ -11,12 +11,11 @@ import { today as todayFn } from '@/features/booking/availability';
 import { useBooking } from '@/features/booking/booking-context';
 import {
   addDays,
-  daysBetween,
   formatDate,
   formatTime,
   fromKey,
 } from '@/features/booking/dates';
-import { quote } from '@/features/booking/pricing';
+import { quoteFromDraft } from '@/features/booking/pricing';
 import { formatPeso } from '@/features/catalog/types';
 
 /** Screen 12 — the last clear summary before any money moves. */
@@ -27,23 +26,14 @@ export default function Summary() {
   const today = todayFn();
 
   if (!draft?.pickup || !draft.ret) {
-    return (
-      <View className="flex-1 items-center justify-center bg-canvas px-8">
-        <Text className="text-center font-sans text-base text-muted">
-          Choose your dates first.
-        </Text>
-      </View>
-    );
+    return <NoDraft />;
   }
 
   const pickup = fromKey(draft.pickup);
   const ret = fromKey(draft.ret);
-  const days = daysBetween(pickup, ret) + 1;
-  const q = quote({
-    pricePerDay: draft.pricePerDay,
-    deposit: draft.deposit,
-    days,
-  });
+  const q = quoteFromDraft(draft);
+  if (!q) return <NoDraft />;
+  const days = q.days;
   const cleanFrom = addDays(ret, 1);
   const cleanTo = addDays(ret, draft.cleaningDays);
 

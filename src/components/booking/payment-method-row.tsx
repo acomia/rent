@@ -1,6 +1,6 @@
 import { Text, View, Pressable } from 'react-native';
 
-import { BRONZE } from '@/components/catalog/catalog-style';
+import { BRONZE, RING } from '@/components/catalog/catalog-style';
 
 /**
  * One payment method. The mark is a coloured plate carrying the provider's
@@ -45,7 +45,7 @@ export function PaymentMethodRow({
       </View>
       <View
         className="h-5 w-5 items-center justify-center rounded-full border-2"
-        style={{ borderColor: selected ? BRONZE : '#C9C0B1' }}
+        style={{ borderColor: selected ? BRONZE : RING }}
       >
         {selected ? (
           <View

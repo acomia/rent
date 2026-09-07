@@ -12,21 +12,17 @@
 
 import { ITEM_SELECT, mapItem, type ItemRow } from '@/features/catalog/api';
 import type { Category, Item } from '@/features/catalog/types';
-import { supabase } from '@/lib/supabase';
+import {
+  extensionFor,
+  requireDb,
+  supabase,
+  uploadToBucket,
+} from '@/lib/supabase';
 
 import type { CategoryFormValues, ItemFormValues } from './schemas';
 import type { Admin } from './types';
 
 const BUCKET = 'item-photos';
-
-function requireDb() {
-  if (!supabase) {
-    throw new Error(
-      'Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_* to .env.',
-    );
-  }
-  return supabase;
-}
 
 // --- Admin identity ----------------------------------------------------------
 
@@ -250,22 +246,9 @@ export async function uploadItemPhoto(
   contentType: string,
   itemId?: string,
 ): Promise<string> {
-  const db = requireDb();
-  const ext = contentType.includes('png')
-    ? 'png'
-    : contentType.includes('webp')
-      ? 'webp'
-      : 'jpg';
   const uid = `${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`}`;
-  const path = `${itemId ?? 'staged'}/${uid}.${ext}`;
-
-  const arrayBuffer = await fetch(localUri).then((res) => res.arrayBuffer());
-  const { error } = await db.storage
-    .from(BUCKET)
-    .upload(path, arrayBuffer, { contentType, upsert: false });
-  if (error) throw error;
-
-  return db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  const path = `${itemId ?? 'staged'}/${uid}.${extensionFor(contentType)}`;
+  return uploadToBucket(BUCKET, path, localUri, contentType);
 }
 
 /** Upload a batch of locally-picked images concurrently; see `uploadItemPhoto`. */

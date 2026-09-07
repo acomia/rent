@@ -20,6 +20,7 @@ import {
   formatMonth,
   formatTime,
   sameDay,
+  toKey,
 } from '@/features/booking/dates';
 
 /**
@@ -42,16 +43,25 @@ export default function AdminFittings() {
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   }, [selected]);
 
-  const withFittings = data.filter(
-    (b) => b.fittingAt && b.fittingStatus !== 'cancelled',
-  );
+  // One pass over the data instead of a scan per weekday cell plus another for
+  // the day's rows: each of those re-parsed every `fittingAt` string, so a
+  // week view cost ~8 full scans with a fresh Date per booking per scan.
+  const byDay = useMemo(() => {
+    const map = new Map<string, typeof data>();
+    for (const b of data) {
+      if (!b.fittingAt || b.fittingStatus === 'cancelled') continue;
+      const key = toKey(new Date(b.fittingAt));
+      const bucket = map.get(key);
+      if (bucket) bucket.push(b);
+      else map.set(key, [b]);
+    }
+    for (const bucket of map.values()) {
+      bucket.sort((a, b) => a.fittingAt!.localeCompare(b.fittingAt!));
+    }
+    return map;
+  }, [data]);
 
-  const dayHas = (d: Date) =>
-    withFittings.some((b) => sameDay(new Date(b.fittingAt!), d));
-
-  const rows = withFittings
-    .filter((b) => sameDay(new Date(b.fittingAt!), selected))
-    .sort((a, b) => a.fittingAt!.localeCompare(b.fittingAt!));
+  const rows = byDay.get(toKey(selected)) ?? [];
 
   return (
     <View className="flex-1 bg-canvas">
@@ -126,7 +136,9 @@ export default function AdminFittings() {
                 </View>
                 <View
                   className={`h-1.5 w-1.5 rounded-full ${
-                    dayHas(d) && !active ? 'bg-bronze' : 'bg-transparent'
+                    byDay.has(toKey(d)) && !active
+                      ? 'bg-bronze'
+                      : 'bg-transparent'
                   }`}
                 />
               </Pressable>

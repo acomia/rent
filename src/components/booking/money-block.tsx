@@ -10,7 +10,12 @@ import type { Quote } from '@/features/booking/types';
  *
  * Payment state is never a badge here — it is always attached to an amount.
  */
-function Row({
+/**
+ * The app's label/value row. Exported because the booking detail carried a
+ * private copy — and DESIGN.md's rule that amounts always render the same way
+ * is only enforceable if there is one place that renders them.
+ */
+export function DetailRow({
   label,
   value,
   strong,
@@ -38,13 +43,17 @@ function Row({
 export function MoneyBlock({ quote }: { quote: Quote }) {
   return (
     <View className="divide-y divide-hairline">
-      <Row
+      <DetailRow
         label={`Rental fee (${quote.days} ${quote.days === 1 ? 'day' : 'days'})`}
         value={formatPeso(quote.rentalFee)}
       />
-      <Row label="Refundable deposit" value={formatPeso(quote.deposit)} />
-      <Row label="Total to pay now" value={formatPeso(quote.totalNow)} strong />
-      <Row
+      <DetailRow label="Refundable deposit" value={formatPeso(quote.deposit)} />
+      <DetailRow
+        label="Total to pay now"
+        value={formatPeso(quote.totalNow)}
+        strong
+      />
+      <DetailRow
         label="Balance due at pickup"
         value={formatPeso(quote.balanceAtPickup)}
         strong
@@ -63,8 +72,8 @@ export function PaidBlock({
 }) {
   return (
     <View className="divide-y divide-hairline">
-      <Row label="Total paid" value={formatPeso(paid)} />
-      <Row label="Balance at pickup" value={formatPeso(balance)} strong />
+      <DetailRow label="Total paid" value={formatPeso(paid)} />
+      <DetailRow label="Balance at pickup" value={formatPeso(balance)} strong />
     </View>
   );
 }

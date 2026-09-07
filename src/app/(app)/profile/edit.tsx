@@ -13,13 +13,13 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { INK, MUTED } from '@/components/catalog/catalog-style';
+import { MUTED } from '@/components/catalog/catalog-style';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { RowGroup, SettingsRow, SwitchRow } from '@/components/ui/settings-row';
 import { TextField } from '@/components/ui/text-field';
+import { FlowHeader } from '@/components/booking/flow-header';
 import { useAuth } from '@/features/auth/auth-context';
 import { updateCustomer, uploadAvatar } from '@/features/auth/customer';
 import {
@@ -35,9 +35,8 @@ function localPhone(e164: string | null | undefined): string {
 }
 
 export default function EditProfile() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { customer, user, refreshCustomer } = useAuth();
+  const { customer, user, commitCustomer } = useAuth();
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -102,7 +101,7 @@ export default function EditProfile() {
     if (!user) return;
     setSaving(true);
     try {
-      await updateCustomer(user.id, {
+      const saved = await updateCustomer(user.id, {
         full_name: values.fullName,
         phone_number: normalizePhone(values.phone),
         date_of_birth: values.dateOfBirth ? values.dateOfBirth : null,
@@ -110,7 +109,7 @@ export default function EditProfile() {
         avatar_url: avatar,
         marketing_opt_in: marketing,
       });
-      await refreshCustomer();
+      commitCustomer(saved);
       router.back();
     } catch (e) {
       Alert.alert(
@@ -132,23 +131,7 @@ export default function EditProfile() {
       className="flex-1 bg-canvas"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View
-        className="flex-row items-center gap-3 px-5 pb-3"
-        style={{ paddingTop: insets.top + 10 }}
-      >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          onPress={() => router.back()}
-          hitSlop={8}
-          className="h-10 w-10 items-center justify-center rounded-full border border-hairline bg-surface active:opacity-70"
-        >
-          <Feather name="chevron-left" size={19} color={INK} />
-        </Pressable>
-        <Text className="font-display-semibold text-xl text-ink">
-          Edit profile
-        </Text>
-      </View>
+      <FlowHeader title="Edit profile" />
 
       <ScrollView
         contentContainerClassName="gap-6 px-5 pb-8"

@@ -35,3 +35,21 @@ export function FlowHeader({
     </View>
   );
 }
+
+/**
+ * Shown when a reserve screen is reached without a draft — a deep link, or a
+ * reload mid-flow. Four screens carried a private copy of this block.
+ */
+export function NoDraft({
+  message = 'Choose your dates first.',
+}: {
+  message?: string;
+}) {
+  return (
+    <View className="flex-1 items-center justify-center bg-canvas px-8">
+      <Text className="text-center font-sans text-base text-muted">
+        {message}
+      </Text>
+    </View>
+  );
+}

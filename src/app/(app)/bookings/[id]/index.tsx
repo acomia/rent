@@ -8,7 +8,7 @@ import { FlowHeader } from '@/components/booking/flow-header';
 import { PaidBlock } from '@/components/booking/money-block';
 import { RentalBand } from '@/components/booking/rental-band';
 import { Button } from '@/components/ui/button';
-import { StatusBadge, type Status } from '@/components/ui/status-badge';
+import { CUSTOMER_STATUS, StatusBadge } from '@/components/ui/status-badge';
 import { today as todayFn } from '@/features/booking/availability';
 import { useBookingByRef, useCancelBooking } from '@/features/booking/hooks';
 import {
@@ -17,16 +17,6 @@ import {
   formatTime,
   fromKey,
 } from '@/features/booking/dates';
-import type { Booking } from '@/features/booking/types';
-
-const STATUS_MAP: Record<Booking['status'], Status> = {
-  pending: 'pending',
-  confirmed: 'confirmed',
-  outnow: 'outnow',
-  returned: 'cleaning',
-  completed: 'settled',
-  cancelled: 'settled',
-};
 
 /** Screen 19 — booking detail. */
 export default function BookingDetail() {
@@ -86,7 +76,7 @@ export default function BookingDetail() {
           pickup={booking.pickup}
           ret={booking.ret}
           days={days}
-          right={<StatusBadge status={STATUS_MAP[booking.status]} />}
+          right={<StatusBadge status={CUSTOMER_STATUS[booking.status]} />}
         />
 
         <RentalBand

@@ -8,7 +8,6 @@ import {
 } from '@expo-google-fonts/inter';
 import {
   PlayfairDisplay_400Regular,
-  PlayfairDisplay_500Medium,
   PlayfairDisplay_600SemiBold,
   PlayfairDisplay_700Bold,
   useFonts,
@@ -113,7 +112,6 @@ function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
     PlayfairDisplay_400Regular,
-    PlayfairDisplay_500Medium,
     PlayfairDisplay_600SemiBold,
     PlayfairDisplay_700Bold,
   });

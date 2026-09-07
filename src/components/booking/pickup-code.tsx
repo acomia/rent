@@ -12,6 +12,10 @@ import { INK } from '@/components/catalog/catalog-style';
  * part of the pickup work, not the design pass.
  */
 const GRID = 21;
+// Hoisted: these were rebuilt 441 times per render.
+const CELL = { width: `${100 / GRID}%`, height: `${100 / GRID}%` } as const;
+const ON = { ...CELL, backgroundColor: INK };
+const OFF = { ...CELL, backgroundColor: 'transparent' };
 
 export function PickupCode({ reference }: { reference: string }) {
   const cells = useMemo(() => {
@@ -49,14 +53,7 @@ export function PickupCode({ reference }: { reference: string }) {
       className="aspect-square w-52 flex-row flex-wrap overflow-hidden rounded-xl bg-white p-2"
     >
       {cells.map((on, i) => (
-        <View
-          key={i}
-          style={{
-            width: `${100 / GRID}%`,
-            height: `${100 / GRID}%`,
-            backgroundColor: on ? INK : 'transparent',
-          }}
-        />
+        <View key={i} style={on ? ON : OFF} />
       ))}
     </View>
   );

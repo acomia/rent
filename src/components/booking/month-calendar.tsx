@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { INK } from '@/components/catalog/catalog-style';
@@ -31,13 +31,23 @@ export function MonthCalendar({
   selection,
   onChange,
   states,
+  unknownDay = 'unavailable',
   onMonthChange,
 }: {
   today: Date;
   selection: Selection;
   onChange: (s: Selection) => void;
   /** Per-day availability for the visible window, keyed 'YYYY-MM-DD'. */
-  states: DayStateMap;
+  states?: DayStateMap;
+  /**
+   * How to read a day the `states` map says nothing about.
+   *
+   * Defaults to 'unavailable' so the rental picker never offers a slot it
+   * cannot vouch for. The fitting picker passes 'available': a fitting is a
+   * visit to the shop, not a rental, so stock availability is irrelevant and it
+   * needs no map at all.
+   */
+  unknownDay?: 'available' | 'unavailable';
   /** Fired when the visible month changes so the parent can fetch it. */
   onMonthChange?: (year: number, month: number) => void;
 }) {
@@ -58,9 +68,21 @@ export function MonthCalendar({
     });
   }
 
+  // Notify the parent only when the visible month actually changes.
+  //
+  // `onMonthChange` is typically an inline arrow, so it has a new identity on
+  // every parent render. With it in the dep array, the effect re-fired, the
+  // parent set state, that re-rendered the parent, which produced a new arrow —
+  // an unbounded loop that re-rendered this 42-cell grid forever without ever
+  // looking broken. The ref holds the last month we reported, so the callback's
+  // identity no longer participates.
+  const reported = useRef<string | null>(null);
   useEffect(() => {
+    const key = `${cursor.year}-${cursor.month}`;
+    if (reported.current === key) return;
+    reported.current = key;
     onMonthChange?.(cursor.year, cursor.month);
-  }, [cursor.year, cursor.month, onMonthChange]);
+  });
 
   function pick(date: Date) {
     const { pickup, ret } = selection;
@@ -118,11 +140,9 @@ export function MonthCalendar({
               if (!date) return <View key={ci} className="flex-1 py-1" />;
 
               const past = daysBetween(today, date) < 0;
-              // Unknown days (window not fetched yet) read as unavailable
-              // rather than bookable — never offer a slot we cannot vouch for.
               const state = past
                 ? 'past'
-                : (states[toKey(date)] ?? 'unavailable');
+                : (states?.[toKey(date)] ?? unknownDay);
               const { pickup, ret } = selection;
               const isPickup = pickup ? sameDay(date, pickup) : false;
               const isReturn = ret ? sameDay(date, ret) : false;

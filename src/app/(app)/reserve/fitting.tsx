@@ -7,7 +7,6 @@ import { FlowHeader } from '@/components/booking/flow-header';
 import { MonthCalendar } from '@/components/booking/month-calendar';
 import { Button } from '@/components/ui/button';
 import { today as todayFn } from '@/features/booking/availability';
-import { addDays, toKey } from '@/features/booking/dates';
 import { useBooking } from '@/features/booking/booking-context';
 
 const SLOTS = ['10:00 AM', '11:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'];
@@ -40,14 +39,6 @@ export default function Fitting() {
 
   const selection = useMemo(() => ({ pickup: day, ret: day }), [day]);
 
-  // A fitting is a visit to the shop, not a rental: it does not consume the
-  // item, so every upcoming day is offerable regardless of stock availability.
-  const openDays = useMemo(() => {
-    const out: Record<string, 'available'> = {};
-    for (let i = 0; i < 120; i++) out[toKey(addDays(today, i))] = 'available';
-    return out;
-  }, [today]);
-
   function onConfirm() {
     if (!day || !slot) return;
     setFitting(toIso(day, slot));
@@ -73,7 +64,7 @@ export default function Fitting() {
         {draft ? (
           <MonthCalendar
             today={today}
-            states={openDays}
+            unknownDay="available"
             selection={selection}
             onChange={(s) => {
               setDay(s.pickup);

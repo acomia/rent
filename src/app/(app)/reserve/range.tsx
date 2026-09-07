@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FlowHeader } from '@/components/booking/flow-header';
+import { FlowHeader, NoDraft } from '@/components/booking/flow-header';
 import { RentalBand, RentalBandLegend } from '@/components/booking/rental-band';
 import { Button } from '@/components/ui/button';
 import { today as todayFn } from '@/features/booking/availability';
@@ -15,7 +15,7 @@ import {
   toKey,
 } from '@/features/booking/dates';
 import { useDayStates } from '@/features/booking/hooks';
-import { quote } from '@/features/booking/pricing';
+import { quoteFromDraft } from '@/features/booking/pricing';
 import { formatPeso } from '@/features/catalog/types';
 
 /** Screen 9 — the chosen range confirmed back, with what it costs. */
@@ -30,12 +30,10 @@ export default function DateRange() {
   const hasRange = Boolean(draft?.pickup && draft?.ret);
   const pickup = draft?.pickup ? fromKey(draft.pickup) : today;
   const ret = draft?.ret ? fromKey(draft.ret) : today;
-  const days = daysBetween(pickup, ret) + 1;
-  const q = quote({
-    pricePerDay: draft?.pricePerDay ?? 0,
-    deposit: draft?.deposit ?? 0,
-    days,
-  });
+  const q = quoteFromDraft(
+    draft ?? { pricePerDay: 0, deposit: 0, pickup: null, ret: null },
+  );
+  const days = q?.days ?? 0;
 
   // Read from the same cached availability the calendar used, rather than
   // recomputing — a second source of truth here would eventually disagree
@@ -58,13 +56,7 @@ export default function DateRange() {
   }
 
   if (!hasRange || !draft) {
-    return (
-      <View className="flex-1 items-center justify-center bg-canvas px-8">
-        <Text className="text-center font-sans text-base text-muted">
-          Choose your dates first.
-        </Text>
-      </View>
-    );
+    return <NoDraft />;
   }
 
   return (
@@ -99,7 +91,7 @@ export default function DateRange() {
             Rental fee ({days} {days === 1 ? 'day' : 'days'})
           </Text>
           <Text className="font-sans-bold text-base text-ink">
-            {formatPeso(q.rentalFee)}
+            {formatPeso(q?.rentalFee ?? 0)}
           </Text>
         </View>
 

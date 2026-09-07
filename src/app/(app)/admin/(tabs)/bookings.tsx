@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { AdminHeader } from '@/components/admin/admin-header';
@@ -7,7 +7,10 @@ import { BookingRow } from '@/components/admin/booking-row';
 import { BRONZE } from '@/components/catalog/catalog-style';
 import { FilterPill } from '@/components/catalog/filter-pill';
 import { CatalogError } from '@/components/catalog/states';
-import type { AdminBookingStatus } from '@/features/admin/bookings-api';
+import {
+  needsAction,
+  type AdminBookingStatus,
+} from '@/features/admin/bookings-api';
 import { useAdminBookings } from '@/features/admin/bookings-hooks';
 
 /**
@@ -29,9 +32,9 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 ];
 
 const MATCHES: Record<FilterKey, (s: AdminBookingStatus) => boolean> = {
-  needs_action: (s) => s === 'pending' || s === 'hold',
+  needs_action: (s) => needsAction({ status: s }),
   all: () => true,
-  pending: (s) => s === 'pending' || s === 'hold',
+  pending: (s) => needsAction({ status: s }),
   confirmed: (s) => s === 'approved',
   outnow: (s) => s === 'picked_up' || s === 'rented',
 };
@@ -60,16 +63,19 @@ export default function AdminBookings() {
     isRefetching,
   } = useAdminBookings();
 
-  const rows = data
-    .filter((b) => MATCHES[filter](b.status))
-    .sort((a, b) => {
-      const p = PRIORITY[a.status] - PRIORITY[b.status];
-      return p !== 0 ? p : a.pickup.localeCompare(b.pickup);
-    });
+  // Filtering and sorting ran on every render — including each refetch flip.
+  const rows = useMemo(
+    () =>
+      data
+        .filter((b) => MATCHES[filter](b.status))
+        .sort((a, b) => {
+          const p = PRIORITY[a.status] - PRIORITY[b.status];
+          return p !== 0 ? p : a.pickup.localeCompare(b.pickup);
+        }),
+    [data, filter],
+  );
 
-  const awaiting = data.filter(
-    (b) => b.status === 'pending' || b.status === 'hold',
-  ).length;
+  const awaiting = useMemo(() => data.filter(needsAction).length, [data]);
 
   return (
     <View className="flex-1 bg-canvas">

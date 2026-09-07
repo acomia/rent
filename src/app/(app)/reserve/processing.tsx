@@ -5,7 +5,7 @@ import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FlowStepper } from '@/components/booking/flow-stepper';
-import { BRONZE } from '@/components/catalog/catalog-style';
+import { BRONZE, OVERDUE } from '@/components/catalog/catalog-style';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/features/booking/booking-context';
 import { useCreateBooking } from '@/features/booking/hooks';
@@ -66,7 +66,7 @@ export default function Processing() {
       <View className="flex-1 bg-canvas">
         <View className="flex-1 items-center justify-center gap-5 px-8">
           <View className="h-16 w-16 items-center justify-center rounded-full bg-overdue-soft">
-            <Feather name="alert-circle" size={28} color="#A83232" />
+            <Feather name="alert-circle" size={28} color={OVERDUE} />
           </View>
           <Text className="text-center font-display-bold text-2xl text-ink">
             We couldn&apos;t reserve these dates

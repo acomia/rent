@@ -62,7 +62,6 @@ module.exports = {
         'sans-semibold': ['Inter_600SemiBold'],
         'sans-bold': ['Inter_700Bold'],
         display: ['PlayfairDisplay_400Regular'],
-        'display-medium': ['PlayfairDisplay_500Medium'],
         'display-semibold': ['PlayfairDisplay_600SemiBold'],
         'display-bold': ['PlayfairDisplay_700Bold'],
       },

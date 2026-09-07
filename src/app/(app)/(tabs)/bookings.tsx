@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useBottomTabBarHeight } from 'expo-router/js-tabs';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Pressable,
   RefreshControl,
@@ -14,7 +14,7 @@ import { BookingCard } from '@/components/booking/booking-card';
 import { RentalBand } from '@/components/booking/rental-band';
 import { SegmentedToggle } from '@/components/catalog/segmented-toggle';
 import { BRONZE } from '@/components/catalog/catalog-style';
-import { StatusBadge, type Status } from '@/components/ui/status-badge';
+import { CUSTOMER_STATUS, StatusBadge } from '@/components/ui/status-badge';
 import { today as todayFn } from '@/features/booking/availability';
 import { useBookings } from '@/features/booking/hooks';
 import {
@@ -23,17 +23,7 @@ import {
   formatTime,
   fromKey,
 } from '@/features/booking/dates';
-import type { Booking } from '@/features/booking/types';
 import { formatPeso } from '@/features/catalog/types';
-
-const STATUS_MAP: Record<Booking['status'], Status> = {
-  pending: 'pending',
-  confirmed: 'confirmed',
-  outnow: 'outnow',
-  returned: 'cleaning',
-  completed: 'settled',
-  cancelled: 'settled',
-};
 
 /**
  * Screen 18 — My bookings.
@@ -54,16 +44,23 @@ export default function Bookings() {
   const today = todayFn();
   const [tab, setTab] = useState('upcoming');
 
-  const past = bookings.filter(
-    (b) => b.status === 'completed' || b.status === 'cancelled',
-  );
-  const active = bookings.filter(
-    (b) => b.status !== 'completed' && b.status !== 'cancelled',
-  );
-  const upcoming = active.filter(
-    (b) => b.status === 'confirmed' || b.status === 'pending',
-  );
-  const returning = active.filter((b) => b.status === 'outnow');
+  // Four passes over the same array on every render, one of them redundant
+  // (`active` was only ever split again) — now one pass, on data change.
+  const { past, upcoming, returning } = useMemo(() => {
+    const groups = {
+      past: [] as typeof bookings,
+      upcoming: [] as typeof bookings,
+      returning: [] as typeof bookings,
+    };
+    for (const b of bookings) {
+      if (b.status === 'completed' || b.status === 'cancelled')
+        groups.past.push(b);
+      else if (b.status === 'outnow') groups.returning.push(b);
+      else if (b.status === 'confirmed' || b.status === 'pending')
+        groups.upcoming.push(b);
+    }
+    return groups;
+  }, [bookings]);
 
   const shown =
     tab === 'upcoming'
@@ -137,7 +134,7 @@ export default function Bookings() {
                       pickup={b.pickup}
                       ret={b.ret}
                       days={days}
-                      right={<StatusBadge status={STATUS_MAP[b.status]} />}
+                      right={<StatusBadge status={CUSTOMER_STATUS[b.status]} />}
                     />
                     <RentalBand
                       pickup={fromKey(b.pickup)}

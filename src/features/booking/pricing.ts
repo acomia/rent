@@ -1,3 +1,4 @@
+import { daysBetween, fromKey, type DayKey } from './dates';
 import type { Quote } from './types';
 
 /**
@@ -25,4 +26,27 @@ export function quote({
     totalNow: deposit,
     balanceAtPickup: rentalFee,
   };
+}
+
+/**
+ * The quote for an in-progress draft.
+ *
+ * Three reserve screens each derived `days` and called `quote()` themselves, so
+ * an inclusive/exclusive change — or any future minimum-rental rule — had to be
+ * made in three places, and one of them showing a different total than the next
+ * screen is a payment dispute. `days` is inclusive of both endpoints.
+ */
+export function quoteFromDraft(draft: {
+  pricePerDay: number;
+  deposit: number;
+  pickup: DayKey | null;
+  ret: DayKey | null;
+}): (Quote & { days: number }) | null {
+  if (!draft.pickup || !draft.ret) return null;
+  const days = daysBetween(fromKey(draft.pickup), fromKey(draft.ret)) + 1;
+  return quote({
+    pricePerDay: draft.pricePerDay,
+    deposit: draft.deposit,
+    days,
+  });
 }

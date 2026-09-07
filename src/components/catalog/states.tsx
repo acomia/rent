@@ -1,8 +1,8 @@
 import { Feather } from '@expo/vector-icons';
+import { OVERDUE, MUTED } from './catalog-style';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
-import { MUTED } from './catalog-style';
 
 /**
  * Shared loading / empty / error states for the catalog screens, so the three
@@ -57,7 +57,7 @@ export function CatalogError({ onRetry }: { onRetry?: () => void }) {
   return (
     <View className="items-center gap-4 py-16">
       <View className="h-14 w-14 items-center justify-center rounded-full bg-overdue-soft">
-        <Feather name="wifi-off" size={22} color="#A83232" />
+        <Feather name="wifi-off" size={22} color={OVERDUE} />
       </View>
       <Text className="px-8 text-center font-sans text-base text-muted">
         We couldn&apos;t load the catalog. Check your connection and try again.

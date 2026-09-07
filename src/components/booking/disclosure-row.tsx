@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Pressable, Text } from 'react-native';
 
-import { INK, MUTED } from '@/components/catalog/catalog-style';
+import { INK, MUTED, OVERDUE } from '@/components/catalog/catalog-style';
 
 type FeatherName = keyof typeof Feather.glyphMap;
 
@@ -29,7 +29,7 @@ export function DisclosureRow({
           : 'border-hairline bg-surface'
       }`}
     >
-      <Feather name={icon} size={18} color={destructive ? '#A83232' : INK} />
+      <Feather name={icon} size={18} color={destructive ? OVERDUE : INK} />
       <Text
         className={`flex-1 font-sans-medium text-base ${
           destructive ? 'text-overdue' : 'text-ink'

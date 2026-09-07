@@ -6,6 +6,12 @@ import {
   INK,
   MUTED,
 } from '@/components/catalog/catalog-style';
+import {
+  addDays,
+  daysBetween,
+  formatDayMonth,
+  sameDay,
+} from '@/features/booking/dates';
 
 /**
  * The rental band — the signature element of this design (see DESIGN.md).
@@ -23,45 +29,6 @@ import {
  *
  * `sm` is unlabelled for list rows; `md` and `lg` label the dates.
  */
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
-function startOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-function addDays(d: Date, n: number) {
-  return new Date(startOfDay(d).getTime() + n * DAY_MS);
-}
-
-function daysBetween(a: Date, b: Date) {
-  return Math.round(
-    (startOfDay(b).getTime() - startOfDay(a).getTime()) / DAY_MS,
-  );
-}
-
-function shortDate(d: Date) {
-  return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
-}
-
-function sameDay(a: Date, b: Date) {
-  return startOfDay(a).getTime() === startOfDay(b).getTime();
-}
 
 type Size = 'sm' | 'md' | 'lg';
 
@@ -112,7 +79,7 @@ export function RentalBand({
             }}
           />
           <Text className="font-sans text-xs text-muted">
-            Fitting {shortDate(fitting)} — does not hold the item
+            Fitting {formatDayMonth(fitting)} — does not hold the item
           </Text>
         </View>
       ) : null}
@@ -193,7 +160,7 @@ export function RentalBand({
                     : 'font-sans-medium text-ink'
                 }`}
               >
-                {shortDate(d.date)}
+                {formatDayMonth(d.date)}
               </Text>
               {i === 0 ? (
                 <Text className="font-sans text-[10px] text-muted">Pickup</Text>

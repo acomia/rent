@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { TextInput, View, type TextInputProps } from 'react-native';
 
-import { MUTED } from './catalog-style';
+import { MUTED, PLACEHOLDER } from './catalog-style';
 
 /**
  * Search field on the recessed fill, with a leading magnifier. Controlled —
@@ -13,7 +13,7 @@ export function SearchBar(props: TextInputProps) {
       <Feather name="search" size={20} color={MUTED} />
       <TextInput
         placeholder="Search gowns, costumes…"
-        placeholderTextColor="#9A9184"
+        placeholderTextColor={PLACEHOLDER}
         className="flex-1 font-sans text-base text-ink"
         {...props}
       />

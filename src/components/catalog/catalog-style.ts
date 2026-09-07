@@ -10,9 +10,16 @@ export const CANVAS = '#F7F3EC';
 export const SURFACE = '#FFFDF9';
 export const HAIRLINE = '#E5DDD0';
 export const BRONZE = '#8A6F45';
+export const BRONZE_DEEP = '#6F5836';
 export const BRONZE_SOFT = '#E8DCC8';
 export const CHARCOAL = '#1C1A17';
 export const CLOUD = '#F2EDE4';
+/** Mirrors the `overdue` token — destructive icons and late/error marks. */
+export const OVERDUE = '#A83232';
+/** Unselected radio/checkbox ring. */
+export const RING = '#C9C0B1';
+/** Placeholder text inside a recessed field. */
+export const PLACEHOLDER = '#9A9184';
 
 /**
  * Photography is the only saturated colour in this design, so the `tint` field

@@ -2,11 +2,10 @@ import { Feather } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert, ScrollView, View } from 'react-native';
 
-import { INK } from '@/components/catalog/catalog-style';
 import { RowGroup, SettingsRow, SwitchRow } from '@/components/ui/settings-row';
+import { FlowHeader } from '@/components/booking/flow-header';
 import { useAuth } from '@/features/auth/auth-context';
 import {
   updateCustomer,
@@ -48,9 +47,8 @@ const CHANNELS: {
 ];
 
 export default function Settings() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { customer, user, refreshCustomer, signOut } = useAuth();
+  const { customer, user, commitCustomer, signOut } = useAuth();
 
   // Optimistic: a switch that lags behind the finger feels broken. The write is
   // fire-and-forget with a rollback, not a spinner.
@@ -66,8 +64,7 @@ export default function Settings() {
     const previous = prefs[key];
     setPrefs((p) => ({ ...p, [key]: next }));
     try {
-      await updateCustomer(user.id, { [key]: next });
-      await refreshCustomer();
+      commitCustomer(await updateCustomer(user.id, { [key]: next }));
     } catch (e) {
       setPrefs((p) => ({ ...p, [key]: previous }));
       Alert.alert(
@@ -81,21 +78,7 @@ export default function Settings() {
 
   return (
     <View className="flex-1 bg-canvas">
-      <View
-        className="flex-row items-center gap-3 px-5 pb-3"
-        style={{ paddingTop: insets.top + 10 }}
-      >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          onPress={() => router.back()}
-          hitSlop={8}
-          className="h-10 w-10 items-center justify-center rounded-full border border-hairline bg-surface active:opacity-70"
-        >
-          <Feather name="chevron-left" size={19} color={INK} />
-        </Pressable>
-        <Text className="font-display-semibold text-xl text-ink">Settings</Text>
-      </View>
+      <FlowHeader title="Settings" />
 
       <ScrollView
         contentContainerClassName="gap-6 px-5 pb-10 pt-1"

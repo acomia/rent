@@ -14,20 +14,11 @@
  *     double booking. A rejected insert here is expected, not exceptional.
  */
 
-import { supabase } from '@/lib/supabase';
+import { requireDb, supabase } from '@/lib/supabase';
 import { dayState as localDayState, today } from './availability';
 import { addDays, daysBetween, fromKey, toKey, type DayKey } from './dates';
 import { quote } from './pricing';
 import type { Booking, BookingStatus, FulfillmentType } from './types';
-
-function requireDb() {
-  if (!supabase) {
-    throw new Error(
-      'Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_* to .env.',
-    );
-  }
-  return supabase;
-}
 
 /** Postgres exclusion-constraint violation — the dates were taken first. */
 const OVERLAP_CODE = '23P01';

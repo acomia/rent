@@ -77,12 +77,6 @@ export const otpSchema = z.object({
     .regex(/^\d{6}$/, 'Enter the 6-digit code'),
 });
 
-export const profileSchema = z.object({
-  fullName: z.string().trim().min(2, 'Enter your full name').max(120),
-  phone: phField,
-  address: z.string().trim().max(300).optional().or(z.literal('')),
-});
-
 /**
  * The Edit-profile form.
  *
@@ -118,5 +112,4 @@ export type LoginForm = z.infer<typeof loginSchema>;
 export type ForgotRequestForm = z.infer<typeof forgotRequestSchema>;
 export type ForgotResetForm = z.infer<typeof forgotResetSchema>;
 export type OtpForm = z.infer<typeof otpSchema>;
-export type ProfileForm = z.infer<typeof profileSchema>;
 export type EditProfileForm = z.infer<typeof editProfileSchema>;

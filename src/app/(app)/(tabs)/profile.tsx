@@ -4,32 +4,11 @@ import { useBottomTabBarHeight } from 'expo-router/js-tabs';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { INK } from '@/components/catalog/catalog-style';
+import { BRONZE, INK } from '@/components/catalog/catalog-style';
 import { Avatar } from '@/components/ui/avatar';
 import { RowGroup, SettingsRow } from '@/components/ui/settings-row';
 import { useAuth } from '@/features/auth/auth-context';
-
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-function memberSince(iso: string | undefined): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-}
+import { formatMonth } from '@/features/booking/dates';
 
 export default function Profile() {
   const insets = useSafeAreaInsets();
@@ -37,7 +16,13 @@ export default function Profile() {
   const router = useRouter();
   const { customer, user, isAdmin } = useAuth();
 
-  const since = memberSince(customer?.created_at);
+  // Membership month, via the shared formatter — the third private copy of a
+  // month-name array lived here.
+  const created = customer?.created_at ? new Date(customer.created_at) : null;
+  const since =
+    created && !Number.isNaN(created.getTime())
+      ? formatMonth(created.getFullYear(), created.getMonth())
+      : null;
 
   return (
     <View className="flex-1 bg-canvas">
@@ -105,7 +90,7 @@ export default function Profile() {
         */}
         {since ? (
           <View className="flex-row items-center gap-3 rounded-2xl bg-bronze-soft px-4 py-3.5">
-            <Feather name="award" size={22} color="#8A6F45" />
+            <Feather name="award" size={22} color={BRONZE} />
             <View className="gap-0.5">
               <Text className="font-sans-semibold text-base text-bronze-deep">
                 Valued customer
