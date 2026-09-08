@@ -12,9 +12,8 @@ import {
   CatalogError,
   CatalogLoading,
 } from '@/components/catalog/states';
-import { useCart } from '@/features/catalog/cart-context';
 import { useItems } from '@/features/catalog/hooks';
-import type { Item } from '@/features/catalog/types';
+import type { Occasion, Item } from '@/features/catalog/types';
 
 function chunkPairs(items: Item[]): Item[][] {
   const rows: Item[][] = [];
@@ -26,8 +25,10 @@ export default function Search() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const router = useRouter();
-  const { add, has } = useCart();
-  const { q } = useLocalSearchParams<{ q?: string }>();
+  const { q, occasion } = useLocalSearchParams<{
+    q?: string;
+    occasion?: string;
+  }>();
 
   // `query` is the live text field; `term` is the committed search (on submit).
   const [query, setQuery] = useState(q ?? '');
@@ -48,8 +49,11 @@ export default function Search() {
     }
   }
 
+  // `occasion` arrives from Home's "For an event" shortcut. Without it that
+  // shortcut would open an unfiltered list, which is worse than no shortcut.
   const { data, isLoading, isError, refetch, isRefetching } = useItems({
     search: term || undefined,
+    occasion: (occasion as Occasion | undefined) ?? null,
   });
 
   const products = data ?? [];
@@ -104,14 +108,12 @@ export default function Search() {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  added={has(product.id)}
                   onPress={() =>
                     router.push({
                       pathname: '/(app)/product/[id]',
                       params: { id: product.id },
                     })
                   }
-                  onAdd={() => add(product.id)}
                 />
               ))}
               {row.length === 1 ? <View className="flex-1" /> : null}

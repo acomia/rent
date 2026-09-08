@@ -12,8 +12,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BRONZE, INK, tintClass } from '@/components/catalog/catalog-style';
+import {
+  BRONZE,
+  INK,
+  MUTED,
+  tintClass,
+} from '@/components/catalog/catalog-style';
 import { Glyph } from '@/components/catalog/glyph';
+import { SimilarItems } from '@/components/catalog/similar-items';
 import { CatalogError } from '@/components/catalog/states';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/features/booking/booking-context';
@@ -144,6 +150,47 @@ export default function ProductDetail() {
         <Text className="font-sans text-[15px] leading-6 text-muted">
           {product.description}
         </Text>
+
+        {/*
+          Shop promises, not item data — the same for every piece, so they are
+          stated here rather than stored per item. If any of these stops being
+          true for some items, it becomes a column.
+        */}
+        <View className="gap-3 border-t border-hairline pt-5">
+          {[
+            { icon: 'award' as const, label: 'Designer inspired' },
+            { icon: 'check-circle' as const, label: 'Premium quality' },
+            { icon: 'droplet' as const, label: 'Dry cleaning included' },
+            {
+              icon: 'scissors' as const,
+              label: 'Free alterations (selected sizes)',
+            },
+          ].map((f) => (
+            <View key={f.label} className="flex-row items-center gap-3">
+              <Feather name={f.icon} size={16} color={MUTED} />
+              <Text className="font-sans text-sm text-ink">{f.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/(app)/size-guide')}
+          className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface p-4 active:opacity-80"
+        >
+          <Feather name="maximize-2" size={17} color={INK} />
+          <View className="flex-1">
+            <Text className="font-sans-medium text-base text-ink">
+              Size guide
+            </Text>
+            <Text className="font-sans text-xs text-muted">
+              Measurements, and how alterations work
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={MUTED} />
+        </Pressable>
+
+        <SimilarItems item={product} />
       </ScrollView>
 
       <View
