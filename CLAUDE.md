@@ -101,6 +101,12 @@ demoing without a real session; never treat it as auth in non-dev logic.
   check availability with a read-then-write — it isn't safe under concurrency.
   `pick_free_unit()` is `SECURITY DEFINER` because RLS hides other customers'
   bookings, so a client-side freeness check would confidently pick a taken unit.
+- The customer calendar (`item_day_states`) is **size-scoped and SECURITY
+  DEFINER** — pass the chosen size through `useDayStates`, and remember the
+  function must run as definer because RLS would otherwise hide other
+  customers' bookings from it and report taken days as free
+  (`0017_item_day_states_size.sql`). It is still advisory: the exclusion
+  constraint is the arbiter.
 - "Today" is a **Manila** calendar day: use `todayManila()` from
   `features/booking/dates.ts`, never `new Date()`. The database checks
   `today_manila()`, so a device-local day can offer a date the DB then refuses.
@@ -134,7 +140,7 @@ what the code assumes, so check here before designing anything in this area:
   the booking flow reads from it, so a change of shape there is not local. Don't
   build a deposit formula until that decision exists.
 
-**Database** (`src/db/*.sql`): numbered, ordered migrations through `0016`,
+**Database** (`src/db/*.sql`): numbered, ordered migrations through `0017`,
 applied by hand via the Supabase SQL editor (or `supabase db push`) — there is
 no migration runner in this repo. When adding a schema change, add the
 next-numbered `NNNN_*.sql` file rather than editing a past one. Every table has

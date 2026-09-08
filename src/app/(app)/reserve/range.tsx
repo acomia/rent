@@ -44,6 +44,7 @@ export default function DateRange() {
     hasRange ? draft?.itemId : undefined,
     searchFrom,
     searchTo,
+    draft?.size,
   );
 
   let next: Date | null = null;

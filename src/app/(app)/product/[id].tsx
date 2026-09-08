@@ -32,6 +32,10 @@ export default function ProductDetail() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { startDraft } = useBooking();
+  // Optional: null means "any copy". A chosen size narrows both the
+  // availability calendar and which physical unit the shop assigns, so it has
+  // to reach the draft rather than only tint a chip.
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: product, isLoading, isError, refetch } = useItem(id);
 
@@ -72,6 +76,7 @@ export default function ProductDetail() {
       pricePerDay: product!.pricePerDay,
       deposit: product!.deposit,
       cleaningBufferDays: product!.cleaningBufferDays,
+      size: selectedSize,
     });
     router.push('/(app)/reserve/dates');
   }
@@ -116,22 +121,38 @@ export default function ProductDetail() {
 
         <View className="gap-2">
           <Text className="font-sans-medium text-sm text-ink">
-            {product.sizes.length > 0 ? 'Available sizes' : 'Size'}
+            {product.sizes.length > 0 ? 'Sizes' : 'Size'}
           </Text>
           <View className="flex-row flex-wrap gap-2">
             {product.sizes.length > 0 ? (
-              product.sizes.map((size) => (
-                <View
-                  key={size}
-                  className="h-10 min-w-10 items-center justify-center rounded-full border border-hairline bg-surface px-4"
-                >
-                  <Text className="font-sans-semibold text-sm text-ink">
-                    {size}
-                  </Text>
-                </View>
-              ))
+              product.sizes.map((size) => {
+                const selected = selectedSize === size;
+                return (
+                  <Pressable
+                    key={size}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={`Size ${size}`}
+                    // Tapping the chosen size again clears it, which is how a
+                    // customer gets back to "any size" — the calendar then
+                    // shows every copy of the design again.
+                    onPress={() => setSelectedSize(selected ? null : size)}
+                    className={`h-10 min-w-10 items-center justify-center rounded-full px-4 active:opacity-80 ${
+                      selected ? 'bg-charcoal' : 'border-hairline bg-surface'
+                    }`}
+                  >
+                    <Text
+                      className={`font-sans-semibold text-sm ${
+                        selected ? 'text-white' : 'text-ink'
+                      }`}
+                    >
+                      {size}
+                    </Text>
+                  </Pressable>
+                );
+              })
             ) : (
-              <View className="h-10 items-center justify-center rounded-full border border-hairline bg-surface px-4">
+              <View className="h-10 items-center justify-center rounded-full border-hairline bg-surface px-4">
                 <Text className="font-sans-semibold text-sm text-ink">
                   One size
                 </Text>
@@ -176,7 +197,7 @@ export default function ProductDetail() {
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/(app)/size-guide')}
-          className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface p-4 active:opacity-80"
+          className="flex-row items-center gap-3 rounded-2xl border-hairline bg-surface p-4 active:opacity-80"
         >
           <Feather name="maximize-2" size={17} color={INK} />
           <View className="flex-1">

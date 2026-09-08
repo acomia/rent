@@ -39,15 +39,21 @@ export type DayStateMap = Record<
 
 /**
  * Per-day calendar state for a design across the given window.
- * A day is available when at least one sellable unit is free that day.
+ *
+ * A day is available when at least one sellable unit is free that day — of
+ * `size`, when one is given. Passing the customer's chosen size matters: the
+ * final insert calls `pick_free_unit` with that size, so an unscoped calendar
+ * can offer a date that the insert then refuses.
  */
 export async function fetchDayStates(
   itemId: string,
   from: Date,
   to: Date,
+  size?: string | null,
 ): Promise<DayStateMap> {
   if (!supabase) {
-    // Offline demo: approximate from the deterministic local generator.
+    // Offline demo: approximate from the deterministic local generator. Size is
+    // ignored here — the mock catalog has no per-unit inventory to narrow to.
     const out: DayStateMap = {};
     const span = daysBetween(from, to);
     for (let i = 0; i <= span; i++) {
@@ -67,6 +73,7 @@ export async function fetchDayStates(
     p_item_id: itemId,
     p_from: toKey(from),
     p_to: toKey(to),
+    p_size: size ?? null,
   });
   if (error) throw error;
 

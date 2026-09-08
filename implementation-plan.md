@@ -126,9 +126,12 @@ Goal: customer can browse, search, filter, and view item details.
 
 **Sizing is the point of this phase.** In the observed workflow the first question a customer asks
 is "what size is it" — before price, before dates — and the owner answers it by hand for every
-enquiry. Item sizes, the size guide and honest photos are therefore the conversion features, not
-decoration: if they are thin, the customer goes back to Messenger and the app has saved nobody any
-work. Anything that improves the answer to that question is worth more than another filter.
+enquiry. Replacing that exchange is the product's whole premise (see Known Risks in
+`project-scope.md`), so item sizes, the size guide and honest photos are the conversion features,
+not decoration. Anything that improves the answer to that question is worth more than another
+filter — and anything that gives a _wrong_ answer is a threat to the premise, which is why
+`0017_item_day_states_size.sql` (size-aware availability) is treated as a correctness fix rather
+than an enhancement.
 
 **Known gap:** the read path falls back to mock data only when Supabase is _unconfigured_, not when a
 request _fails_. A paused project or a dropped connection therefore surfaces the error state rather
@@ -210,10 +213,24 @@ Goal: customer can reserve an item for a date range or book a fitting; admin can
       `approved` is rejected, and updating an own booking to `approved` is rejected.
 - [x] Anchor all date logic to **Asia/Manila** — rental dates are `date` (a pickup is a calendar day,
       not an instant) and `today_manila()` replaces `current_date`, which follows the server timezone
-- [x] Implement availability query — `item_day_states(item, from, to)` returns the three-state
+- [x] Implement availability query — `item_day_states(item, from, to, size)` returns the three-state
       customer calendar across every unit of a design; plus `is_unit_free()` and `pick_free_unit()`
       (`0011_pick_free_unit.sql`). `pick_free_unit` must be SECURITY DEFINER: RLS hides other
       customers' bookings, so a client-side freeness check would confidently pick a taken unit.
+- [x] **`0017_item_day_states_size.sql` — two calendar fixes.** (a) The calendar was not size-aware
+      while `pick_free_unit` filters by size, so a customer who picked M could be offered a date held
+      only by an L and be refused at the final insert. (b) The function was SECURITY INVOKER, so RLS
+      hid _other customers'_ bookings from it — taken days rendered as available, and to `anon` every
+      day looked free. It is now size-scoped and SECURITY DEFINER (it returns a day and one of three
+      words, never customer data). The size flows `draft.size` → `useDayStates` (in the query key) →
+      `fetchDayStates` → `p_size`. **Applied to `rent-dev` and verified against live data:**
+      Aurora Ball Gown has 4 sellable units but only one L; with the L booked Sep 27–30 (+2 buffer),
+      the unscoped calendar reports every day `available` while `p_size => 'L'` reports
+      `unavailable` for the rental days and `cleaning` for the buffer, and `'M'` stays free. The
+      definer half was verified as the `anon` role: `item_day_states` reports 4 unavailable + 2
+      cleaning days while `select count(*) from bookings` returns 0 for that same caller.
+      `get_advisors` flags the function under `anon_security_definer_function_executable` — expected
+      and documented in the migration.
 - [x] Build calendar UI on item details — `components/booking/month-calendar.tsx`, driven by
       `item_day_states`, with a permanent legend
 - [x] Build booking form (pickup, return, fulfillment) — `reserve/dates` → `range` → `fulfillment`
@@ -515,10 +532,11 @@ Goal: validate the app with the real shop in mind, fix what breaks, ship to stor
 - [ ] Recruit the target shop owner for beta testing
 - [ ] Run the shop on the app for 2–4 weeks (parallel with their current system)
 - [ ] Collect feedback weekly; triage into "fix before launch" vs. "v2"
-- [ ] **Watch the two assumptions the observed workflow puts at risk:** (a) do customers stop
-      messaging on Facebook once the catalog answers the size question, or do they run both channels?
-      (b) does anyone actually use the app's date-first order, or do they still try to pay first? If
-      (a) fails, in-app messaging stops being a v2 item.
+- [ ] **Watch the two assumptions the observed workflow puts at risk:** (a) does the catalog actually
+      answer the size question well enough that customers stop needing Messenger? Replacing that
+      search is the product's premise, so this is a test of the premise, not of a feature — in-app
+      messaging is deliberately out of v1 _and_ v2. (b) does anyone use the app's date-first order,
+      or do they still try to pay first?
 - [ ] Migrate any test data; create production Supabase project
 - [ ] Switch PayMongo to live keys
 - [ ] App Store submission (TestFlight first → public release) — allow a few days' buffer; first submissions often bounce

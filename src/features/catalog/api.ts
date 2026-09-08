@@ -16,6 +16,7 @@ import type {
   Item,
   ItemFilters,
   ItemUnit,
+  UnitStatus,
 } from '@/features/catalog/types';
 
 // Columns selected for an item, with its physical units embedded. Exported so
@@ -60,13 +61,29 @@ function mapUnit(row: UnitRow): ItemUnit {
   };
 }
 
+/**
+ * Statuses that take a copy out of rotation until the shop does something about
+ * it. Everything else — `reserved`, `rented`, `under_cleaning` — is a copy that
+ * exists and is coming back.
+ *
+ * This is the single definition of "the design comes in this size", and it must
+ * stay in step with the candidate filter inside `item_day_states`
+ * (`src/db/0017_item_day_states_size.sql`), or the size list and the calendar
+ * will disagree about what is rentable.
+ */
+const OUT_OF_ROTATION: readonly UnitStatus[] = ['damaged', 'unavailable'];
+
 export function mapItem(row: ItemRow): Item {
   const units = (row.item_units ?? []).map(mapUnit);
-  // Distinct sizes that a customer could actually rent right now.
+  // Every size the design comes in — NOT the sizes free today. Filtering to
+  // `status === 'available'` made a size vanish from the page whenever its only
+  // copy was out on rent, which reads to a customer as "they don't stock my
+  // size" rather than "my size is busy those days". Which dates a size is free
+  // is the calendar's job (`item_day_states(item, from, to, size)`).
   const sizes = [
     ...new Set(
       units
-        .filter((u) => u.status === 'available' && u.size)
+        .filter((u) => !OUT_OF_ROTATION.includes(u.status) && u.size)
         .map((u) => u.size as string),
     ),
   ];

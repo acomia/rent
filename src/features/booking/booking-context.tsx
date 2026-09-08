@@ -29,6 +29,8 @@ type BookingContextValue = {
     pricePerDay: number;
     deposit: number;
     cleaningBufferDays: number;
+    /** Null means "any copy" — the calendar and unit pick stay unnarrowed. */
+    size?: string | null;
   }) => void;
   setRange: (pickup: string, ret: string) => void;
   setFulfillment: (f: FulfillmentType) => void;
@@ -54,7 +56,10 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       ret: null,
       fulfillment: null,
       fittingAt: null,
-      size: null,
+      // Carried in at creation rather than set immediately afterwards: the size
+      // decides which days the calendar may offer, so it must be there before
+      // the dates screen's first availability fetch.
+      size: item.size ?? null,
     });
   }, []);
 

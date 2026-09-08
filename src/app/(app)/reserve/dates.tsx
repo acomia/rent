@@ -56,6 +56,7 @@ export default function SelectDates() {
     draft?.itemId,
     windowFrom,
     windowTo,
+    draft?.size,
   );
 
   if (!draft) {

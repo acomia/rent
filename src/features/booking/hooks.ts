@@ -20,14 +20,27 @@ import { toKey } from './dates';
 export const bookingKeys = {
   all: ['bookings'] as const,
   one: (ref: string) => ['bookings', ref] as const,
-  days: (itemId: string, from: string, to: string) =>
-    ['bookings', 'days', itemId, from, to] as const,
+  days: (itemId: string, from: string, to: string, size: string | null) =>
+    ['bookings', 'days', itemId, from, to, size ?? 'any'] as const,
 };
 
-export function useDayStates(itemId: string | undefined, from: Date, to: Date) {
+export function useDayStates(
+  itemId: string | undefined,
+  from: Date,
+  to: Date,
+  size?: string | null,
+) {
   return useQuery({
-    queryKey: bookingKeys.days(itemId ?? '', toKey(from), toKey(to)),
-    queryFn: () => fetchDayStates(itemId as string, from, to),
+    // `size` is part of the key: a design's calendar differs per size, and
+    // serving the all-sizes answer to a customer who picked M would offer dates
+    // the final insert refuses.
+    queryKey: bookingKeys.days(
+      itemId ?? '',
+      toKey(from),
+      toKey(to),
+      size ?? null,
+    ),
+    queryFn: () => fetchDayStates(itemId as string, from, to, size),
     enabled: Boolean(itemId),
     // Availability must not go stale while the screen sits open — someone else
     // may take the slot. But the window overlaps by two months as the customer

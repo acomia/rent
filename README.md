@@ -141,6 +141,12 @@ schema only — no dashboard configuration is needed:
   Until it is, Home renders its fallbacks — no hero slides, no shop address, no
   announcement banner.
 
+- [`src/db/0017_item_day_states_size.sql`](./src/db/0017_item_day_states_size.sql) —
+  makes the customer availability calendar size-aware, and SECURITY DEFINER so it
+  can see other customers' bookings at all. **Required by the current client:**
+  `fetchDayStates` now passes `p_size`, so until this runs the calendar call fails
+  against the old three-argument function.
+
 There is no admin UI for the `0016` content yet, so edit those three tables in
 the SQL editor for now. Announcements are filtered by RLS on `is_active` plus a
 `starts_at`/`ends_at` window, so a banner can be scheduled instead of deleted.
