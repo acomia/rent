@@ -1,27 +1,25 @@
-import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 
 import { formatPeso, type Item } from '@/features/catalog/mock-data';
-import { INK, MUTED, tintClass } from './catalog-style';
+import { MUTED, tintClass } from './catalog-style';
 import { Glyph } from './glyph';
 
 /**
- * Grid product card: a tall photo panel with a save affordance in the corner,
- * then the item name and its per-day rate. The photograph is the only colour on
- * the card — the panel behind it is neutral and only shows when there is no
- * photo yet.
+ * Grid product card: a tall photo panel, then the item name and its per-day
+ * rate. The photograph is the only colour on the card — the panel behind it is
+ * neutral and only shows when there is no photo yet.
+ *
+ * No corner action. The design board shows a heart, but a wishlist is v2
+ * (project-scope.md), and an affordance that saves nothing is worse than none.
+ * Tapping the card opens the item; dates are chosen there.
  */
 export function ProductCard({
   product,
-  added,
   onPress,
-  onAdd,
 }: {
   product: Item;
-  added: boolean;
   onPress?: () => void;
-  onAdd?: () => void;
 }) {
   return (
     <Pressable
@@ -44,20 +42,6 @@ export function ProductCard({
         ) : (
           <Glyph name={product.icon} size={56} color={MUTED} />
         )}
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={added ? 'In your bag' : `Add ${product.name}`}
-          onPress={onAdd}
-          hitSlop={8}
-          className="absolute right-2.5 top-2.5 h-9 w-9 items-center justify-center rounded-full bg-surface/90 active:opacity-80"
-        >
-          <Feather
-            name={added ? 'check' : 'heart'}
-            size={17}
-            color={added ? '#1F7A45' : INK}
-          />
-        </Pressable>
       </View>
 
       <View className="gap-1 px-0.5">

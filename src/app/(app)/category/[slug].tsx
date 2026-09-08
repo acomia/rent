@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CartButton } from '@/components/catalog/cart-button';
 import { BRONZE, INK } from '@/components/catalog/catalog-style';
 import {
   EMPTY_SHEET_FILTERS,
@@ -24,7 +23,6 @@ import {
   CatalogError,
   CatalogLoading,
 } from '@/components/catalog/states';
-import { useCart } from '@/features/catalog/cart-context';
 import { useItems } from '@/features/catalog/hooks';
 import type { CategorySlug, Gender, Item } from '@/features/catalog/types';
 
@@ -46,7 +44,6 @@ function hasActiveFilters(f: SheetFilters): boolean {
 export default function CategoryListing() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { add, has } = useCart();
   const { slug, gender } = useLocalSearchParams<{
     slug: CategorySlug;
     gender?: Gender;
@@ -108,7 +105,6 @@ export default function CategoryListing() {
         >
           <Feather name="chevron-left" size={22} color={INK} />
         </Pressable>
-        <CartButton />
       </View>
 
       <Text className="font-display-bold text-4xl text-ink">{category}</Text>
@@ -149,14 +145,12 @@ export default function CategoryListing() {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  added={has(product.id)}
                   onPress={() =>
                     router.push({
                       pathname: '/(app)/product/[id]',
                       params: { id: product.id },
                     })
                   }
-                  onAdd={() => add(product.id)}
                 />
               ))}
               {row.length === 1 ? <View className="flex-1" /> : null}
