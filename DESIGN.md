@@ -1,5 +1,11 @@
 Generate a complete modern mobile app UI design system and screen designs for a gown and costume rental app called "Renta".
 
+> **This brief is also the shipped reference.** The token layer in
+> `tailwind.config.js` and every screen in `src/app/` are built from it, so it is
+> kept in sync as the product changes rather than frozen as the original prompt —
+> annotations below mark where the built app has moved on. The app is
+> **light-only**: there are no `dark:` variants anywhere in `src/`.
+
 Renta is a rental booking app for a single dress shop in Manila. A customer browses gowns and costumes, checks which dates a piece is actually free, reserves a date range, and holds it with an online deposit — then pays the balance in person at pickup. The shop runs the other half from the same app: catalog, approvals, returns, fittings. The whole product is one loop, and the app should state it plainly: **Find → Check dates → Reserve → Pay deposit → Confirmed → Pick up → Return.**
 
 Two people use this app, and both are on a phone. The customer is booking for a wedding, a debut, or a convention — usually once, usually anxious, usually deciding on a mid-range Android device. The shop owner is one person running the floor between customers, who needs to know what is going out today, what is coming back, and who has not paid.
@@ -74,7 +80,7 @@ Design system to define up front (before the screens):
 - further components: segmented control, search field with clear action, size chip row, color swatch row, product card with a save affordance, list row with thumbnail, disclosure row, stat card, selection card with a radio, a three-stage progress indicator, bottom sheet, confirmation sheet, toast, skeleton loader, empty state, offline banner, floating add button, and a scannable code block for pickup
 - **a signature element — the rental band.** One continuous horizontal strip showing a rental as a span of time rather than a checkout. A solid bronze segment across the rental days with filled markers at pickup and return; a lighter dotted tail for the cleaning days, which are blocked but not booked; a hairline for today; and a hollow marker drawn OFF the band entirely for a fitting, because a fitting does not hold the item. Label the dates beneath the markers. Present it with its own legend — rental period, cleaning (blocked), today, fitting (separate) — and design it small and unlabelled for list rows, medium for a booking card, and full width with dates for the booking summary and detail.
 - a rule the design must express visually: **booking status and payment status are two different things and never merge into one badge.** A booking can be confirmed and still owe money; it can be pending with nothing paid at all. Status lives in the badge and the band; money always sits next to an amount.
-- **customer tab bar: Home, Bookings, Profile** — three tabs, line icons with labels, no center action button
+- **customer tab bar: Home, Browse, Bookings, Profile** — four tabs, line icons with labels, no center action button. Home is a dashboard, not a catalog; **Browse** owns discovery, so the two must not repeat each other.
 - **admin tab bar: Dashboard, Bookings, Items, More** — four tabs, same construction
 - icon style: single-weight rounded line icons from one family throughout — home, calendar, search, heart, user, clock, credit card, chevron — never filled, never mixed weights
 
@@ -90,9 +96,12 @@ Screens to design, numbered and labelled exactly as listed:
 
 **Browse and discover**
 
-6. **Browse home** — "Good morning," in the sans above the customer's first name in the serif, a notification bell, a search field, a Women / Men segmented toggle, and a two-by-two grid of photographic category tiles: Gowns, Costumes, Shoes, Accessories.
+6. **Home** — "Good morning," in the sans above the customer's first name in the serif, and a notification bell. Then a **hero carousel** of editorial slides, four **shortcuts** (Find a look, For an event, My bookings, Visit store), the customer's **next booking** if they have one, a scheduled **announcement** banner, and curated entry points — each a real query, never a static tile. Home answers "what do I need to do, and what is worth a look"; it is deliberately **not** a second catalog. The slides, the shop's address and pickup hours, and the announcement are shop-editable content, so the design must survive all of them being absent.
+
+   **Browse** (a second screen, split out of Home — count it as 6b) — the discovery half: a search field, the full grid of photographic category tiles (Gowns, Costumes, Shoes, Accessories), and a Featured strip. Also **Categories** as its own screen, and a **Size guide** reachable from an item, covering measurements and how alterations work.
+
 7. **Search results** — the query in the field with a clear action, a result count and a Filter button, then a two-column grid of product cards, each a photo with a save affordance in the corner, the name, and the per-day price.
-8. **Item detail** — full-bleed photo carousel with a page indicator; a card overlapping the photo carrying the item name in the serif, the per-day rate, and the refundable deposit called out separately; a size chip row with the selected size filled charcoal; a color swatch row; and a sticky bottom bar showing the rate plus deposit beside a charcoal "Check dates".
+8. **Item detail** — full-bleed photo carousel with a page indicator; a card overlapping the photo carrying the item name in the serif, the per-day rate, and the refundable deposit called out separately; a size chip row with the selected size filled charcoal; a color swatch row; the four **shop promises** as a quiet icon list (designer inspired, premium quality, dry cleaning included, free alterations on selected sizes — the same for every piece, so they are stated here rather than per item); a link to the **size guide**; a **similar items** strip; and a sticky bottom bar showing the rate plus deposit beside a charcoal "Check dates".
 9. **Filter sheet, empty search, loading skeletons, and an error state with retry.**
 
 **Dates and booking — the half of the product that exists nowhere else**
@@ -135,7 +144,7 @@ Voice: plain English with the cadence of ordinary Manila speech, sentence case, 
 
 Accessibility is part of the design. Text meets AA against the ivory ground — the taupe secondary must be dark enough to qualify, not merely look soft, and the bronze must be deep enough for white labels to clear it. Status is always carried by a word as well as a color, so the cleaning days on the rental band differ by texture and not only hue. Tap targets are at least 44pt. The design must survive the largest system font size. Motion is minimal and respects reduced-motion.
 
-Explicitly do NOT design: delivery or couriers, damage reporting with photos, automatically calculated penalties, a cleaning queue beyond the blocked dates, reports or analytics charts, reviews and ratings, wishlists beyond the save affordance, promo codes and loyalty, in-app messaging, multiple shops or a marketplace, buying items outright, alterations, currency or language switching, and any web or tablet layout.
+Explicitly do NOT design: **a cart, bag or multi-item checkout** — a rental is one item, one date range, one physical unit, and an item goes straight from its detail screen into the dates flow; delivery or couriers; damage reporting with photos; automatically calculated penalties; a cleaning queue beyond the blocked dates; reports or analytics charts; reviews and ratings; wishlists beyond the save affordance; promo codes and loyalty; in-app messaging; multiple shops or a marketplace; buying items outright; **booking or tracking an alteration** (the size guide explains them, and the item detail promises them, but the app never schedules one — see the scope conflict noted in `project-scope.md`); currency or language switching; and any web or tablet layout.
 
 Deliver it as a single presentation sheet, composed like a studio case study:
 

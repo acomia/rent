@@ -2,29 +2,48 @@
 
 Phased plan to build v1 (per `project-scope.md`) on the stack in `tech-stack.md`. Tasks are sized roughly to half-day to two-day chunks for a solo dev. Phases are ordered so each one produces something testable end-to-end.
 
+> **Read the Observed Workflow section of `project-scope.md` first.** It records how a rental
+> actually runs today — Messenger enquiry, a size question, a deposit sent before any dates are
+> chosen, and a customer-booked Lalamove collecting the item, sometimes a day early. Three of those
+> steps contradict something this plan assumes, and the contradictions are flagged inline: the
+> deposit rule (Phase 5), courier pickup (Phase 7a), and sizing as the primary conversion blocker
+> (Phase 2).
+
 ## Where we left off
 
 Task marks: `[x]` done · `[~]` partially done, with what is missing stated inline · `[ ]` not started.
 
 **Done:** Phases 0–3 complete. Phase 3.5 (design system + rebrand to **Renta**) complete.
-Phase 4 is complete on the customer side and in the database; the admin side of it is not built.
+**Phase 4 is now complete on both sides** — the customer booking flow, the database, and the admin
+shell (dashboard, booking queue, returns, fittings day view). Phase 3.6 (Home rebuild + Browse tab)
+was added after it and is complete in the app, pending its migration being applied.
 
 **Next up, in order:**
 
-1. **Admin fittings calendar** (Phase 4) — a fitting can now be confirmed or cancelled from the
-   booking detail, but there is still no day view of the shop's fitting slots.
-2. **Booking → unit status transitions** (Phase 4) — `item_units.status` is still set by hand in the
-   admin editor and is not driven by booking state.
-3. **Returns flow** (Phase 8 screen, but Phase 4 lifecycle) — a picked-up booking currently has
-   nowhere to go: nothing moves it to `returned`/`completed` or opens the cleaning window.
-4. **Phase 5 payments.** Note this is now a _hard_ dependency rather than a nice-to-have: RLS
-   deliberately gives the client no path to mark its own deposit paid, so until the PayMongo webhook
-   exists, bookings can only ever be created as `pending`. See the Phase 5 notes.
+1. **Apply `0016_home_content.sql`** to the dev project, then build the admin screen that edits
+   `shop_settings` / `home_slides` / `announcements`. Until the migration runs, Home renders its
+   fallbacks; until the screen exists, the content is SQL-editor-only.
+2. **Phase 5 payments.** This is a _hard_ dependency rather than a nice-to-have: RLS deliberately
+   gives the client no path to mark its own deposit paid, so until the PayMongo webhook exists,
+   bookings can only ever be created as `pending`. See the Phase 5 notes.
+3. **Booking → unit status transitions** (Phase 4) — still only partly driven by booking state:
+   flagging condition on a return sets `item_units.status = 'damaged'`, but nothing moves a unit
+   through rented/cleaning, and the admin item editor is still the only other writer.
+4. **Device verification of the admin screens and the payment stand-ins** — see the Phase 4 gaps.
+   The signed-in dev account is not an admin, so `AdminGate` bounces it; the data layer behind those
+   screens is verified as the admin via SQL, but the UI has not been seen.
+5. **Decide whether Phase 7a (customer-arranged courier pickup) enters v1.** Field observation says
+   this is already how items leave the shop — the customer books a Lalamove, sometimes the night
+   before — and the app has no value for it. It is small, and it touches the one thing the app is
+   supposed to get right: who is holding the item, and from when. See Phase 7a and the Observed
+   Workflow section of `project-scope.md`.
 
 **Environment:** the dev Supabase project (`rent-dev`) is live and seeded — 4 categories, 10 items,
-30 units, 2 customers, 1 admin. Migrations `0001`–`0013` are applied. A Supabase MCP server is
-connected, so migrations can now be applied and verified directly rather than pasted into the SQL
-editor by hand.
+30 units, 2 customers, 1 admin. Migrations `0001`–`0013` are applied and verified. `0014` and `0015`
+(profile fields, avatar bucket) were written in the same phase — **confirm they are applied** before
+trusting the profile screens. **`0016` (home content) is not applied.** A Supabase MCP server is
+connected, so migrations can be applied and verified directly rather than pasted into the SQL editor
+by hand — and `get_advisors` run after each one.
 
 **No test runner is configured** (still true — no jest/vitest, no `test` script). Phase 4's
 availability and buffer maths were verified instead with behavioural SQL run against the live
@@ -35,16 +54,16 @@ NOT for the client-side pricing maths, which remains unverified.
 
 Some open items in `project-scope.md` block specific phases. Resolve before starting that phase:
 
-| Open Item                                                  | Blocks Phase | Status                                                                                                         |
-| ---------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| #1 Inventory model (design+units vs. one-listing-one-item) | Phase 2      | **Resolved — design + units.** `items` + `item_units` (`0002_catalog.sql`). Bookings key on `unit_id`.         |
-| #2 Pricing rules                                           | Phase 4      | **Resolved — flat per-day.** `items.rental_fee_per_day`; no weekend tier, no long-rental discount in v1.       |
-| #3 Cleaning buffer                                         | Phase 4      | **Resolved — per item, not shop-wide.** `items.cleaning_buffer_days` (seeded 1–2). Snapshot onto each booking. |
-| #4 Cancellation policy                                     | Phase 5      | **STILL OPEN.** Now also blocks the Cancel-booking action that already ships — see Phase 4 notes.              |
-| #5 Penalty formula                                         | v2 only      | Not needed for v1 (admin-entered late fees).                                                                   |
-| #6 KYC add-ons (ID upload / tiered deposit)                | Phase 1      | **Resolved — OTP only.** Nullable `id_document_url` / `deposit_tier` left for later.                           |
-| #7 Delivery specifics                                      | v1.1         | Deferred; does not block v1. `fulfillment_type` has no `delivery` value, so no row can claim it.               |
-| #8 Admin roles                                             | Phase 3      | **Resolved — single role.** `admins` table; nullable `role` defaults to `owner`.                               |
+| Open Item                                                  | Blocks Phase                    | Status                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #1 Inventory model (design+units vs. one-listing-one-item) | Phase 2                         | **Resolved — design + units.** `items` + `item_units` (`0002_catalog.sql`). Bookings key on `unit_id`.                                                                                                                                                                                                          |
+| #2 Pricing rules                                           | Phase 4                         | **Rental fee resolved — flat per-day** (`items.rental_fee_per_day`). **Deposit rule STILL OPEN:** `items.deposit` is a flat per-item number the schema needed, not an observed shop rule. Confirm before launch.                                                                                                |
+| #3 Cleaning buffer                                         | Phase 4                         | **Resolved — per item, not shop-wide.** `items.cleaning_buffer_days` (seeded 1–2). Snapshot onto each booking.                                                                                                                                                                                                  |
+| #4 Cancellation policy                                     | Phase 5                         | **STILL OPEN — the only one left.** Blocks the Cancel-booking action that already ships — see Phase 4 notes.                                                                                                                                                                                                    |
+| #5 Penalty formula                                         | v2 only                         | Not needed for v1 (admin-entered late fees).                                                                                                                                                                                                                                                                    |
+| #6 KYC add-ons (ID upload / tiered deposit)                | Phase 1                         | **Resolved — OTP only.** Nullable `id_document_url` / `deposit_tier` left for later.                                                                                                                                                                                                                            |
+| #7 Delivery specifics                                      | 7a: **needs a call** · 7b: v1.1 | **7a customer-arranged courier: observed and already happening** — the customer books their own Lalamove; needs a `fulfillment_type` value and a handover story, not an integration. See Phase 7a. **7b shop-operated delivery:** deferred; `fulfillment_type` has no `delivery` value, so no row can claim it. |
+| #8 Admin roles                                             | Phase 3                         | **Resolved — single role.** `admins` table; nullable `role` defaults to `owner`.                                                                                                                                                                                                                                |
 
 ---
 
@@ -79,7 +98,7 @@ Goal: a real user can sign up, log in, and edit their profile.
 - [x] Build sign-up screen (email, password, name, phone)
 - [x] Build OTP verification screen (full `updateUser`→`verifyOtp` flow + `__DEV__` skip)
 - [x] Build login screen + "forgot password" flow (recovery-OTP based)
-- [x] Build session persistence + auth context (`AuthProvider` + `onAuthStateChange`, AsyncStorage)
+- [x] Build session persistence + auth context (`AuthProvider` + `onAuthStateChange`, **MMKV** — synchronous, so Supabase's storage interface takes it with no async shim)
 - [x] Build profile screen (name, contact, email, address) — `@expo/ui` native form
 - [ ] ~~Add ID upload~~ — **deferred**, OTP-only KYC decision (Open Item #6)
 - [x] Add Terms & Conditions + Privacy Policy acceptance on signup (checkbox + atomic timestamp + `terms_version`)
@@ -105,6 +124,12 @@ Goal: customer can browse, search, filter, and view item details.
 - [x] Wire TanStack Query for caching + pull-to-refresh
 - [x] Handle empty / loading / error states — `catalog/states.tsx`, shared across the three screens
 
+**Sizing is the point of this phase.** In the observed workflow the first question a customer asks
+is "what size is it" — before price, before dates — and the owner answers it by hand for every
+enquiry. Item sizes, the size guide and honest photos are therefore the conversion features, not
+decoration: if they are thin, the customer goes back to Messenger and the app has saved nobody any
+work. Anything that improves the answer to that question is worth more than another filter.
+
 **Known gap:** the read path falls back to mock data only when Supabase is _unconfigured_, not when a
 request _fails_. A paused project or a dropped connection therefore surfaces the error state rather
 than degrading to the offline catalog — which is the opposite of what the PH-connectivity design goal
@@ -122,9 +147,9 @@ Goal: admin can add and manage items without engineering help.
 - [x] Decide admin roles (Open Item #8) — **decided: single role for v1** (`admins` table, presence = admin). Nullable `role` defaults to `owner` so an owner/staff split bolts on later with no migration.
 - [x] Create `admins` table + RLS policies — `src/db/0006_admins.sql` (+ `is_admin()` helper + admin write policies on catalog tables)
 - [x] Build admin login (separate entry or role check on shared login) — **role check on shared login**; `isAdmin` on the auth context, `AdminGate` in `src/app/(app)/admin/_layout.tsx`, entry from the Profile screen
-- [x] Build admin home / dashboard shell (empty for now) — `src/app/(app)/admin/index.tsx` (link cards + counts)
-- [x] Build "Manage Items" list screen — `src/app/(app)/admin/items/index.tsx` (includes inactive items)
-- [x] Build add/edit item form (with Zod validation) — `src/app/(app)/admin/items/[id].tsx` (react-hook-form + `itemSchema`)
+- [x] Build admin home / dashboard shell (empty for now) — now the real dashboard at `src/app/(app)/admin/(tabs)/index.tsx` (five stat cards; see Phase 8)
+- [x] Build "Manage Items" list screen — `src/app/(app)/admin/(tabs)/items.tsx` (includes inactive items)
+- [x] Build add/edit item form (with Zod validation) — `src/app/(app)/admin/item/[id].tsx` (react-hook-form + `itemSchema`)
 - [x] Build photo upload (multi-photo, reorder, delete) → Supabase Storage — `expo-image-picker` → `item-photos` bucket (`src/db/0008_storage_item_photos.sql`)
 - [x] Build category management screen (add / edit / delete categories) — `src/app/(app)/admin/categories/` (delete FK-guarded)
 - [x] Build inventory status toggle (available / unavailable / damaged / under cleaning) — per-unit status chips in the item form
@@ -171,7 +196,7 @@ Goal: customer can reserve an item for a date range or book a fitting; admin can
       is no amount column and no `paid` value, so payment state cannot leak into it.
 - [x] **Prevent double-booking at the DB level** — `bookings_no_overlap`,
       `EXCLUDE USING gist (unit_id WITH =, blocked_range WITH &&) WHERE (status not in
-  ('cancelled','rejected'))`. `blocked_range` is a generated `daterange` covering the rental days
+('cancelled','rejected'))`. `blocked_range` is a generated `daterange` covering the rental days
       plus the cleaning buffer. Verified against the live DB: overlapping rental rejected, booking
       inside the buffer rejected, first day after the buffer accepted, another unit of the same design
       unaffected, and cancelling releases the dates.
@@ -200,18 +225,22 @@ Goal: customer can reserve an item for a date range or book a fitting; admin can
 - [x] Build customer's "My Bookings" list — `(tabs)/bookings.tsx`, grouped by what needs attention
       next rather than reverse-chronologically
 - [x] Build admin's "Booking Management" screen (list + approve / reject / cancel) —
-      `(app)/admin/bookings/index.tsx` (a decision queue: "Needs action" is the default filter and
-      undecided bookings sort to the top) and `[ref].tsx` (customer, item, band, money, fitting, and
+      `(app)/admin/(tabs)/bookings.tsx` (a decision queue: "Needs action" is the default filter and
+      undecided bookings sort to the top) and `booking/[ref].tsx` (customer, item, band, money, fitting, and
       the actions legal from the current state). Rejecting requires a reason, entered in an inline
       panel rather than `Alert.prompt`, which is iOS-only. Also added `0013_admin_reads_customers.sql`
       — `customers` had only a select-own policy, so the admin could read a booking but not the name
       of the person who made it. Verified as the admin: approve, reject-with-reason, a rejected
       booking releasing its dates, and both transitions landing in the audit log.
 - [~] Build admin's "Fitting Appointments" calendar (view / confirm / reschedule / cancel) —
-  confirm and cancel now exist on the booking detail; the standalone day-view calendar does not.
-  Rescheduling is not built.
-- [ ] Booking transitions update item status correctly — **not done.** `item_units.status` is still
-      only set by hand in the admin item editor; it is not driven by booking state.
+  confirm and cancel on the booking detail, plus the **day view at `(app)/admin/fittings.tsx`**
+  (a horizontal week strip over time-stamped appointment rows, backed by one memoised day→rows map).
+  **Rescheduling is still not built.**
+- [~] Booking transitions update item status correctly — **partly done.** Flagging condition during a
+  return sets `item_units.status = 'damaged'`, which removes that copy from the calendar. Nothing
+  else is driven by booking state: no unit moves through rented or cleaning, and the admin item
+  editor is otherwise the only writer. (Availability does not depend on this — the `blocked_range`
+  exclusion constraint does that work — so this is about the admin's inventory view, not correctness.)
 - [~] Unit-test the availability + pricing math — no test runner exists, so the DB-level logic was
   verified with behavioural SQL instead (see "Where we left off"). The client-side pricing in
   `features/booking/pricing.ts` is still untested.
@@ -243,8 +272,61 @@ Goal: customer can reserve an item for a date range or book a fitting; admin can
   device — they were reached by deep link, and taps could not be scripted in the simulator.
 
 **Done when:** a customer can request a booking or a fitting, an admin can approve it, the item shows
-reserved on those dates, and concurrent requests for the same slot cannot both succeed. _Three of
-those four hold today; "an admin can approve it" does not._
+reserved on those dates, and concurrent requests for the same slot cannot both succeed. _All four
+hold today in code — approval, rejection and returns are built and verified as the admin via SQL.
+What remains is seeing the admin screens on a device with a real admin session._
+
+---
+
+## Phase 3.6 — Home, Browse & Editorial Content (added; not in the original plan)
+
+Goal: give the app a front door that is not a second catalog, and move the content a shop owner
+changes weekly out of the bundle and into the database.
+
+Home had been a search bar, a gender toggle and a category grid — a duplicate of what search and the
+category screens already do, on the one screen that should answer "what do I need to do next".
+
+- [x] **Split discovery out into a `Browse` tab** — search, the category grid and a Featured strip
+      move to `(app)/(tabs)/browse.tsx`; the customer tab bar becomes Home / Browse / Bookings /
+      Profile. `DESIGN.md` screen 6 is now two screens.
+- [x] **Rebuild Home as a dashboard** — greeting, hero carousel, four shortcuts (Find a look, For an
+      event, My bookings, Visit store), the next booking that needs attention, a scheduled
+      announcement banner, and curated entry points that are real queries rather than static tiles.
+- [x] **Remove the cart** — deleted `cart-context.tsx`, `cart-button.tsx`, `bag.tsx` and the
+      `added`/`onAdd` props threaded through `ProductCard` into three listing screens. A rental is
+      one item over one date range against one unit, so the booking flow takes an item straight to
+      availability; a multi-item bag was a checkout metaphor this domain never had. (The DB had
+      already dropped bags in `0005_remove_bags.sql`.)
+- [x] **`0016_home_content.sql`** — `shop_settings` as a one-row singleton (the app had no record of
+      the shop itself, so "Pick up at Makati" and "Visit store" had nowhere to read from),
+      `home_slides`, and `announcements` with `is_active` plus a date window enforced in RLS so a
+      banner is scheduled rather than remembered. All three public-read (a customer browses before
+      signing in), admin-write via `is_admin()`, and seeded so the hero is never an empty rectangle.
+- [x] `features/home/{api,hooks}.ts` — read-only, so it falls back to defaults when Supabase is
+      absent, on the `features/catalog` pattern. 1-hour `staleTime`: this content changes a few times
+      a year.
+- [x] New screens: `categories.tsx` (the full list, now that Home carries no grid), `size-guide.tsx`
+      (measurements and how alterations work), and a `similar-items` strip on the product page. The
+      product page also states the four shop promises inline — they are identical for every piece, so
+      they are not item columns until one of them stops being true.
+- [x] Dropped Home's collapsing top bar — a Reanimated scroll handler and a shared-value pair spent
+      hiding a 44pt header that now holds the notification affordance.
+
+**Known gaps:**
+
+- **`0016` is not applied to the dev project.** Until it is, Home shows its fallbacks: no slides, no
+  shop address or pickup hours, no announcement.
+- **No admin UI for any of it** — `shop_settings`, `home_slides` and `announcements` are SQL-editor
+  only. This is the next task in the plan.
+- Announcement dismissal is component state, so a dismissed banner returns on remount. Wants a
+  per-customer dismissal row, or MMKV at minimum.
+- The "For an event" shortcut hardcodes `occasion: 'wedding'`, and the curated strip hardcodes its
+  three queries. Fine while the shop has one obvious season; wants to be editorial content too.
+- Not run in the simulator — typecheck, lint and prettier pass, which is not the same thing.
+
+**Done when:** Home tells a customer what they need to do next, Browse owns discovery, and the shop
+can change the hero, its own address and an announcement without a release. _The first two hold; the
+third needs the migration applied and the admin screen built._
 
 ---
 
@@ -260,14 +342,25 @@ Goal: booking is only confirmed once the deposit is paid online.
 > callback rather than on the success screen's render, precisely so the webhook can take that place
 > without the screens changing.
 >
-> The `payments` table (migration `0013`) is where payment state belongs. Nothing in `bookings`
-> should learn about money.
+> The `payments` table is where payment state belongs, and **it does not exist yet** — it is the
+> first item of schema work in this phase (`0013` is `admin_reads_customers`; the next free number is
+> `0017`). Nothing in `bookings` should learn about money.
 
 - [ ] Decide cancellation/refund policy (Open Item #4) — include refund mechanics + who absorbs gateway fees
+- [ ] **Confirm how the deposit amount is actually computed** (Open Item #2). The app ships a flat
+      per-item `items.deposit` because the schema needed a number; in the real flow the customer
+      sends a deposit and the rule behind the amount was never observed. If it scales with item
+      value, or is negotiated per customer, `items.deposit` is the wrong shape — and every money
+      block in the booking flow reads from it, so this is not a local change. Ask before wiring
+      PayMongo to an amount.
+- [ ] Note the **flow-order mismatch**: today the customer pays a deposit and _then_ picks dates. The
+      app requires dates first, which is the safer order (you cannot hold a range you have not
+      chosen) — but it means a customer arriving with the old habit will be asked for something they
+      did not expect. Worth watching in the beta rather than redesigning around.
 - [ ] Set up PayMongo SDK in Expo app
 - [ ] Set up Supabase edge function for PayMongo webhook
 - [ ] **Webhook must verify PayMongo signature and be idempotent** (dedupe on event id — webhooks retry and can arrive out of order/twice; otherwise bookings double-advance and payments double-record)
-- [ ] Create `payments` table (booking_id, type, amount, paymongo_id, `status`: paid / balance_due / refunded / forfeited) + RLS (customer sees own, admin sees all)
+- [ ] Create `payments` table (booking_id, type, amount, paymongo_id, `status`: paid / balance_due / refunded / forfeited) + RLS (customer sees own, admin sees all) — next migration number is `0017`
 - [~] Build deposit payment screen (GCash, GrabPay, Maya, card) — screen built
   (`reserve/payment.tsx`); the marks are coloured plates, so real brand assets are still needed,
   and nothing is wired to PayMongo
@@ -304,13 +397,59 @@ Goal: customer gets timely push + email (+ SMS for time-sensitive alerts) withou
 
 ---
 
-## Phase 7 — Delivery (v1.1 — DEFERRED, not in v1)
+## Phase 7a — Customer-Arranged Courier Pickup (unscheduled — needs a v1/v1.1 call)
 
-Goal: add delivery as a third fulfillment option after v1 ships.
+Goal: model the way items already leave the shop, without integrating a courier.
 
-> Fittings are **not** here — they moved into Phase 4 as a core v1 fulfillment option. This phase is delivery only, and the revised scope defers it to v1.1. Do not build during the v1 critical path.
+> **Why this exists.** Field observation (see the Observed Workflow section of
+> `project-scope.md`): the customer books their own Lalamove and a rider collects from the shop —
+> sometimes the night before the date they need the item. So "delivery" in the real business is not
+> a courier integration the shop operates. It is a **handover to a third party**, arranged by the
+> customer, and the app currently has no concept of it: `fulfillment_type` offers only pickup, the
+> pickup screen addresses the customer, and every date calculation assumes the item leaves on
+> `pickup_date`.
+>
+> This is cheap — no SDK, no fee model, no service area — and it touches the one thing the app is
+> supposed to get right: who is holding the item, and from when. That is the argument for pulling it
+> into v1 rather than parking it with Phase 7b. **Not yet decided.**
 
-- [ ] Decide delivery specifics (Open Item #7) — service area, fee model, courier, who books the rider, whether returns are delivered
+- [ ] Decide: does this ship in v1? (Blocks the rest of this phase, nothing else.)
+- [ ] Add a `courier_pickup` value to `fulfillment_type` — a new migration, and the reserve
+      fulfilment screen gains a third selection card. The card must say plainly that the customer
+      books and pays the rider themselves; the shop only hands the item over.
+- [ ] Decide how a **rider is authorised at the counter.** The pickup code already exists and is
+      shown to staff, so the mechanism is there — what is missing is that it is currently framed as
+      "show this to our staff" to the customer, who may not be present. Options: the customer
+      forwards the code to the rider, or the shop verifies against the booking reference and the
+      customer's name. Needs the shop's answer, not ours.
+- [ ] Handle **collection before `pickup_date`.** A rider booked the night before takes the item out
+      of the shop a day early. Two honest options, and they are not equivalent:
+  1. **Model it** — a `released_at` (or `collected_at`) timestamp distinct from `pickup_date`, so
+     "out now" and overdue read from when the item actually left. Correct, and it means
+     `blocked_range` must cover the early day or a second booking can be sold a day on which the
+     item is already gone.
+  2. **Push it onto the customer** — require the rental range to start on the day the rider
+     collects. Simpler, and it charges the customer for a day they did not want.
+
+  Option 1 is the right one if this ships; option 2 is a trap that gets discovered at the counter.
+
+- [ ] Admin side: the booking queue and the dashboard's "today's pickups" must distinguish a rider
+      pickup from a customer pickup, because the shop prepares for them differently.
+- [ ] Return leg: **not observed.** The scenario says nothing about how the item comes back, so do
+      not assume a rider returns it. Ask the shop before building anything here.
+
+**Done when:** a customer can say "a rider will collect this", the shop knows to expect one, and the
+item's dates reflect when it actually left the shop rather than when the booking said it would.
+
+---
+
+## Phase 7b — Shop-Operated Delivery (v1.1 — DEFERRED, not in v1)
+
+Goal: add shop-operated delivery as a fulfillment option after v1 ships.
+
+> Fittings are **not** here — they moved into Phase 4 as a core v1 fulfillment option. This phase is shop-operated delivery only, and the revised scope defers it to v1.1. Do not build during the v1 critical path. Note that nothing observed in the real workflow requires this phase at all — the customer already solves delivery themselves (Phase 7a). Build it only if the shop actually wants to own the courier relationship.
+
+- [ ] Decide delivery specifics (Open Item #7b) — service area, fee model, courier, who books the rider, whether returns are delivered
 - [ ] Integrate Google Maps SDK + address autocomplete
 - [ ] Extend booking form: add delivery alongside pickup + fitting
 - [ ] Add address fields to `bookings` (only when delivery chosen)
@@ -325,17 +464,27 @@ Goal: add delivery as a third fulfillment option after v1 ships.
 
 Goal: the admin has a single screen showing what needs attention today.
 
-- [ ] Build admin dashboard widgets:
-  - Today's pickups
-  - Today's returns
-  - Pending approvals
-  - Unpaid balances
-  - Overdue rentals
+> **Partly delivered early by Phase 4.** The dashboard and the returns flow were built alongside the
+> admin shell, because a booking queue with nowhere to send a picked-up booking is not usable. The
+> remaining items are the genuinely separate screens.
+
+- [x] Build admin dashboard widgets — `(app)/admin/(tabs)/index.tsx`: Overdue, Today's pickups,
+      Today's returns, Pending approvals, Unpaid balances, as five stat cards over one memoised pass.
+      Overdue is the only card allowed the red tint, so a clean day reads almost colourless.
+  - [x] Today's pickups
+  - [x] Today's returns
+  - [x] Pending approvals
+  - [x] Unpaid balances
+  - [x] Overdue rentals
 - [ ] Build customer management screen (search + view rental history)
-- [ ] Build return management flow (mark returned → balance settled → item to "under cleaning" or "available")
-- [ ] Build payment tracking screen (list of all payments, filterable)
-- [ ] Build audit log viewer (admin actions)
-- [ ] Build rental history screen for customers (past + current)
+- [x] Build return management flow (mark returned → balance settled → item to "under cleaning" or
+      "available") — `(app)/admin/returns.tsx` + `return/[ref].tsx`, in three steps. Flagging
+      condition marks the unit damaged. **Caveat:** `markReturned` is three non-atomic client calls
+      and wants one DB function.
+- [ ] Build payment tracking screen (list of all payments, filterable) — needs the `payments` table (Phase 5)
+- [ ] Build audit log viewer (admin actions) — the table and its triggers exist (`0007`); no viewer
+- [~] Build rental history screen for customers (past + current) — the Bookings tab has Upcoming and
+  Past sections; there is no separate receipts/history screen, and receipts are inert until Phase 5
 
 **Done when:** admin can run a full shop day from the dashboard.
 
@@ -366,6 +515,10 @@ Goal: validate the app with the real shop in mind, fix what breaks, ship to stor
 - [ ] Recruit the target shop owner for beta testing
 - [ ] Run the shop on the app for 2–4 weeks (parallel with their current system)
 - [ ] Collect feedback weekly; triage into "fix before launch" vs. "v2"
+- [ ] **Watch the two assumptions the observed workflow puts at risk:** (a) do customers stop
+      messaging on Facebook once the catalog answers the size question, or do they run both channels?
+      (b) does anyone actually use the app's date-first order, or do they still try to pay first? If
+      (a) fails, in-app messaging stops being a v2 item.
 - [ ] Migrate any test data; create production Supabase project
 - [ ] Switch PayMongo to live keys
 - [ ] App Store submission (TestFlight first → public release) — allow a few days' buffer; first submissions often bounce
@@ -382,7 +535,7 @@ Goal: validate the app with the real shop in mind, fix what breaks, ship to stor
 - **Phases 0–4 are the critical path.** Everything else builds on a working catalog + booking flow. Fittings are part of Phase 4 (core v1), not a later add-on.
 - **Get the booking-concurrency work in Phase 4 right first.** The exclusion constraint + slot hold are the correctness backbone; payments and notifications assume they hold.
 - **Phase 5 (Payments) can start in parallel with Phase 4** once the booking schema is settled — wiring PayMongo and getting webhook signature/idempotency right takes its own debugging time.
-- **Phase 7 (Delivery) is deferred to v1.1** per the revised scope — it is out of the v1 critical path entirely. v1 ships with pickup + fittings.
+- **Phase 7b (shop-operated delivery) is deferred to v1.1** per the revised scope — out of the v1 critical path entirely. **Phase 7a (customer-arranged courier) is a different question:** it is small, it is already how the business works, and it is the only unmodelled part of the observed workflow. Decide it before Phase 10, not after.
 - **Don't skip Phase 10.** A 2-week beta with one real shop catches more bugs than weeks of solo testing.
 
 ## Rough Timeline (solo dev, part-time)
@@ -400,6 +553,7 @@ Goal: validate the app with the real shop in mind, fix what breaks, ship to stor
 | 9 — Polish                             | 1 week                                                          |
 | 10 — Beta + launch                     | 3–4 weeks                                                       |
 | **v1 Total**                           | **~4–5 months part-time, ~2–3 months full-time**                |
-| 7 — Delivery (v1.1)                    | 2 weeks — _after v1 launch, not counted above_                  |
+| 7a — Customer-arranged courier         | 2–4 days — _if pulled into v1; the decision is the slow part_   |
+| 7b — Shop-operated delivery (v1.1)     | 2 weeks — _after v1 launch, not counted above_                  |
 
-Phase 7 (delivery) is excluded from the v1 total. Phase 4 absorbed fittings and the concurrency work, so it grew ~1 week while Phase 7 left the v1 critical path — v1 net timeline is roughly unchanged. These estimates assume the open items are resolved on time and don't drift mid-phase.
+Phase 7b (shop-operated delivery) is excluded from the v1 total; Phase 7a is not counted either, since whether it ships in v1 is undecided. Phase 4 absorbed fittings and the concurrency work, so it grew ~1 week while Phase 7 left the v1 critical path — v1 net timeline is roughly unchanged. These estimates assume the open items are resolved on time and don't drift mid-phase.

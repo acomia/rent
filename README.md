@@ -4,13 +4,17 @@ Mobile app for gown & costume rentals — customers browse and reserve; the shop
 manages inventory, bookings, payments, and returns. Single shop in v1.
 
 See [`project-scope.md`](./project-scope.md), [`implementation-plan.md`](./implementation-plan.md),
-and [`tech-stack.md`](./tech-stack.md) for the full plan.
+[`tech-stack.md`](./tech-stack.md) and [`DESIGN.md`](./DESIGN.md) for the full
+plan and the design brief.
 
 ## Stack
 
 React Native + Expo (Expo Router, TypeScript) · Supabase (Postgres, Auth,
-Storage, Edge Functions) · NativeWind · TanStack Query + Zustand · PayMongo ·
-Resend.
+Storage, Edge Functions) · NativeWind · TanStack Query (server state) + React
+context (client state) · MMKV for the persisted session · PayMongo · Resend.
+
+Payments and email are planned, not wired — see Phase 5/6 in the
+implementation plan.
 
 ## Getting started
 
@@ -31,8 +35,10 @@ Resend/SMS keys) here; those live in Supabase edge-function secrets.
 | `EXPO_PUBLIC_SUPABASE_URL`      | Supabase → Project Settings → API |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API |
 
-The app boots without `.env`; the home screen shows connection status so you can
-verify each service once its keys are in.
+The app boots without `.env` — the catalog and home screens fall back to static
+mock content, so every screen still renders. Note the fallback covers an
+_unconfigured_ Supabase, not a _failing_ one: with keys present but the project
+paused, screens show their error state instead.
 
 ### Backend setup (Phase 1 — Auth)
 
@@ -108,6 +114,37 @@ The admin catalog management area needs the migrations plus one way to create an
 > phase you must **rebuild the dev client** (`pnpm ios` / `pnpm android`) — a JS
 > reload is not enough.
 
+### Backend setup (Phase 4 — Booking, fittings, home content)
+
+Run these in order in the SQL editor (or `supabase db push`). Everything here is
+schema only — no dashboard configuration is needed:
+
+- [`src/db/0010_bookings.sql`](./src/db/0010_bookings.sql) — the `bookings`
+  table, its RLS, and `bookings_no_overlap`: the `EXCLUDE USING gist` constraint
+  over `(unit_id, blocked_range)` that is the **only** thing actually preventing
+  a double booking. Also `today_manila()`, because `current_date` follows the
+  server timezone.
+- [`src/db/0011_pick_free_unit.sql`](./src/db/0011_pick_free_unit.sql) —
+  `item_day_states()` for the customer calendar, plus `is_unit_free()` and
+  `pick_free_unit()`.
+- [`src/db/0012_booking_function_hardening.sql`](./src/db/0012_booking_function_hardening.sql) —
+  fixes flagged by the database linter. **Run `get_advisors` after any DDL
+  change**; this class of mistake is invisible otherwise.
+- [`src/db/0013_admin_reads_customers.sql`](./src/db/0013_admin_reads_customers.sql) —
+  lets an admin read the customer behind a booking.
+- [`src/db/0014_customer_profile_fields.sql`](./src/db/0014_customer_profile_fields.sql)
+  and [`src/db/0015_storage_avatars.sql`](./src/db/0015_storage_avatars.sql) —
+  profile fields and the owner-scoped `avatars` bucket.
+- [`src/db/0016_home_content.sql`](./src/db/0016_home_content.sql) —
+  `shop_settings` (a one-row singleton), `home_slides` and `announcements`:
+  public-read, admin-write, and seeded. **Not yet applied to the dev project.**
+  Until it is, Home renders its fallbacks — no hero slides, no shop address, no
+  announcement banner.
+
+There is no admin UI for the `0016` content yet, so edit those three tables in
+the SQL editor for now. Announcements are filtered by RLS on `is_active` plus a
+`starts_at`/`ends_at` window, so a banner can be scheduled instead of deleted.
+
 ## Scripts
 
 | Command                     | Does                                   |
@@ -137,3 +174,9 @@ src/
 EAS Build profiles are in [`eas.json`](./eas.json): `development` (dev client),
 `preview` (internal distribution), `production`. Run
 `npx eas build --profile development`.
+
+> **Before any EAS build or store submission:** `ios/` and `android/` are
+> committed and still carry the pre-rebrand identity — `Rent.xcodeproj` with
+> bundle id `com.arnancomia.rent`, while `app.json` says
+> `com.arnancomia.renta`. `app.json` was changed without an `expo prebuild`.
+> Harmless locally; it must be resolved before shipping.
