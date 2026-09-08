@@ -30,10 +30,12 @@ was added after it and is complete in the app, pending its migration being appli
 3. **Booking → unit status transitions** (Phase 4) — still only partly driven by booking state:
    flagging condition on a return sets `item_units.status = 'damaged'`, but nothing moves a unit
    through rented/cleaning, and the admin item editor is still the only other writer.
-4. **Run the app on Android.** Phase 0 flagged this as "worth closing early" and it is still open
-   five phases later, while `DESIGN.md` states most of these customers are on mid-range Android.
-   Every phase since has been validated on the iOS simulator only — and the border bug fixed above
-   is exactly the class of thing that differs by platform.
+4. **Finish the Android pass.** The first Android run happened (Pixel 7 emulator) and Home is
+   clean, but only the auth screens and Home have been seen there — the reserve flow, the admin
+   area and returns have not, and nothing has run on a physical device. `DESIGN.md` states most of
+   these customers are on mid-range Android, so this stays on the list until the booking flow has
+   been walked end to end there. Note `adb shell input tap` drives Android reliably, unlike the
+   synthetic-tap route on the iOS simulator.
 5. **Device verification of the admin screens and the payment stand-ins** — see the Phase 4 gaps.
    The account in the simulator is a customer, so `AdminGate` bounces it; the `admins` table does
    hold an owner account to sign in as. The reserve flow past the calendar is also unseen.
@@ -95,8 +97,14 @@ Goal: tooling and accounts ready, "hello world" running on a real device.
 - [ ] Create SMS provider account (Semaphore or Twilio — PH-capable) for pickup + overdue alerts
 - [x] Set up `.env` handling (`expo-constants` + `EXPO_PUBLIC_*` vars)
 - [x] Configure EAS Build profiles (dev / preview / production) — `eas.json`
-- [x] Run dev build on the iOS simulator. **Not yet verified on a physical device, or on Android at
-      all** — and Android is the majority of this audience, so this is worth closing early.
+- [x] Run dev build on the iOS simulator, **and on Android** — Pixel 7 emulator, API 35. Home
+      renders signed in, both font families load, no native module is missing, and nothing
+      platform-specific broke. Caveats: **still not verified on a physical device**, and only the
+      auth screens and Home have been seen on Android — the reserve flow, admin area and returns
+      have not. The Android binary used was the Jul 17 debug APK, which hosts the current JS from
+      Metro fine (no native dependency has changed since) but whose native shell is pre-rebrand:
+      the launcher still reads "Rent". An `expo prebuild` + `pnpm android` closes that, and it is
+      the same drift flagged in Phase 3.5.
 - [x] Add basic folder structure: `src/app/`, `src/features/`, `src/lib/`, `src/components/`, `src/db/`
 
 **Done when:** a blank app boots on iOS + Android and hits Supabase.
@@ -301,6 +309,13 @@ Goal: customer can reserve an item for a date range or book a fitting; admin can
       to four intentional definer functions (`is_admin`, `item_day_states`, `pick_free_unit`,
       `verify_admin_invite_code`) plus `btree_gist` living in `public` (required by the exclusion
       constraint) and `admin_invite_codes` deny-all-by-design.
+- [x] **Fixed a stale route declaration.** `(app)/_layout.tsx` declared
+      `<Stack.Screen name="profile" />` for a route that does not exist — `profile/` holds only
+      `edit.tsx` and `settings.tsx`, and the Profile _tab_ is `(tabs)/profile.tsx`. Expo Router
+      warned on every launch and LogBox showed it as a banner over the app. Replaced with the two
+      real routes; verified gone on a launch where the bundle definitively loaded. Found by reading
+      Android logcat — the warning is cross-platform and had been firing on iOS unnoticed, which is
+      an argument for reading the logs, not only the screen.
 - [x] **Fixed the directional border bug.** `border-t border-hairline` drew a box, not a rule:
       NativeWind's preset defines `borderWidth.hairline`, so the all-sides width applied to the
       other three edges while `border-t` won only the top. Pixel-verified on the tab bar (a 1pt top
