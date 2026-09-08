@@ -37,7 +37,7 @@ export function SegmentedToggle({
   return (
     <View
       onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}
-      className="h-12 flex-row rounded-full border border-hairline bg-canvas-subtle"
+      className="h-12 flex-row rounded-full border-hairline bg-canvas-subtle"
       style={{ padding: PADDING }}
     >
       {segWidth > 0 ? (

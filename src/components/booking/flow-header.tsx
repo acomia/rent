@@ -25,7 +25,7 @@ export function FlowHeader({
         accessibilityLabel="Back"
         onPress={onBack ?? (() => router.back())}
         hitSlop={8}
-        className="h-10 w-10 items-center justify-center rounded-full border border-hairline bg-surface active:opacity-70"
+        className="h-10 w-10 items-center justify-center rounded-full border-hairline bg-surface active:opacity-70"
       >
         <Feather name="chevron-left" size={19} color={INK} />
       </Pressable>

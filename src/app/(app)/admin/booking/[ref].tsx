@@ -150,7 +150,7 @@ export default function AdminBookingDetail() {
           </View>
         ) : null}
 
-        <View className="gap-3 rounded-2xl border border-hairline bg-surface p-4">
+        <View className="gap-3 rounded-2xl border-hairline bg-surface p-4">
           <Text className="font-display-semibold text-lg text-ink">
             {booking.itemName}
             {booking.unitSize ? (
@@ -195,7 +195,7 @@ export default function AdminBookingDetail() {
         </View>
 
         {booking.fittingAt ? (
-          <View className="gap-3 rounded-2xl border border-hairline bg-surface p-4">
+          <View className="gap-3 rounded-2xl border-hairline bg-surface p-4">
             <View className="gap-0.5">
               <Text className="font-sans-medium text-[11px] uppercase tracking-[2px] text-muted">
                 Fitting appointment
@@ -245,7 +245,7 @@ export default function AdminBookingDetail() {
         ) : null}
 
         {rejecting ? (
-          <View className="gap-3 rounded-2xl border border-hairline bg-surface p-4">
+          <View className="gap-3 rounded-2xl border-hairline bg-surface p-4">
             <Text className="font-sans-medium text-sm text-ink">
               Why are you rejecting this?
             </Text>
@@ -258,7 +258,7 @@ export default function AdminBookingDetail() {
               placeholder="e.g. This gown is already promised for those dates."
               placeholderTextColor={PLACEHOLDER}
               multiline
-              className="min-h-[88px] rounded-2xl border border-hairline bg-canvas-subtle p-3 font-sans text-base text-ink"
+              className="min-h-[88px] rounded-2xl border-hairline bg-canvas-subtle p-3 font-sans text-base text-ink"
             />
             <View className="flex-row gap-2">
               <View className="flex-1">

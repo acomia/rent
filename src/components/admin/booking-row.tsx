@@ -54,7 +54,7 @@ export function BookingRow({
       accessibilityRole="button"
       accessibilityLabel={`${customerName}, ${itemName}, ${s.label}`}
       onPress={onPress}
-      className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface p-3 active:opacity-90"
+      className="flex-row items-center gap-3 rounded-2xl border-hairline bg-surface p-3 active:opacity-90"
     >
       <View className="h-14 w-12 items-center justify-center overflow-hidden rounded-xl bg-canvas-subtle">
         {itemPhoto ? (

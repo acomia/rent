@@ -37,7 +37,7 @@ function Step({
     <View className="flex-row gap-3">
       <View
         className={`h-7 w-7 items-center justify-center rounded-full ${
-          done ? 'bg-confirmed' : 'border border-hairline bg-surface'
+          done ? 'bg-confirmed' : 'border-hairline bg-surface'
         }`}
       >
         {done ? (

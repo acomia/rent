@@ -56,7 +56,7 @@ export default function SizeGuide() {
           onChange={(v) => setWho(v as 'women' | 'men')}
         />
 
-        <View className="overflow-hidden rounded-2xl border border-hairline bg-surface">
+        <View className="overflow-hidden rounded-2xl border-hairline bg-surface">
           <View className="flex-row bg-canvas-subtle px-4 py-3">
             {chart.headers.map((h, i) => (
               <Text

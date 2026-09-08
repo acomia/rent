@@ -63,7 +63,7 @@ function QuickAction({
       onPress={onPress}
       className="flex-1 items-center gap-2 active:opacity-70"
     >
-      <View className="h-16 w-full items-center justify-center rounded-2xl border border-hairline bg-surface">
+      <View className="h-16 w-full items-center justify-center rounded-2xl border-hairline bg-surface">
         <Feather name={icon} size={21} color={INK} />
       </View>
       <Text className="font-sans text-xs text-ink">{label}</Text>
@@ -205,7 +205,7 @@ export default function Home() {
         </View>
 
         {banner ? (
-          <View className="flex-row items-start gap-3 rounded-2xl border border-hairline bg-surface p-4">
+          <View className="flex-row items-start gap-3 rounded-2xl border-hairline bg-surface p-4">
             <View className="h-9 w-9 items-center justify-center rounded-full bg-bronze-soft">
               <Feather name="map-pin" size={16} color={BRONZE} />
             </View>
@@ -271,7 +271,7 @@ export default function Home() {
                   params: { id: upcoming.ref },
                 })
               }
-              className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface p-3 active:opacity-90"
+              className="flex-row items-center gap-3 rounded-2xl border-hairline bg-surface p-3 active:opacity-90"
             >
               <View className="h-20 w-16 items-center justify-center overflow-hidden rounded-xl bg-canvas-subtle">
                 {upcoming.itemPhoto ? (
@@ -317,7 +317,7 @@ export default function Home() {
               <Feather name="chevron-right" size={18} color={MUTED} />
             </Pressable>
           ) : (
-            <View className="items-center gap-3 rounded-2xl border border-hairline bg-surface px-6 py-8">
+            <View className="items-center gap-3 rounded-2xl border-hairline bg-surface px-6 py-8">
               <View className="h-12 w-12 items-center justify-center rounded-full bg-canvas-subtle">
                 <Feather name="calendar" size={20} color={MUTED} />
               </View>

@@ -32,7 +32,7 @@ export function RowGroup({
           {label}
         </Text>
       ) : null}
-      <View className="overflow-hidden rounded-2xl border border-hairline bg-surface">
+      <View className="overflow-hidden rounded-2xl border-hairline bg-surface">
         {children}
       </View>
     </View>

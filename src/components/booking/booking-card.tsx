@@ -25,7 +25,7 @@ export function BookingCard({
   right?: React.ReactNode;
 }) {
   return (
-    <View className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface p-3">
+    <View className="flex-row items-center gap-3 rounded-2xl border-hairline bg-surface p-3">
       <View className="h-16 w-14 items-center justify-center overflow-hidden rounded-xl bg-canvas-subtle">
         {photo ? (
           <Image

@@ -20,7 +20,7 @@ export function Chip({
       accessibilityState={{ selected }}
       onPress={onPress}
       className={`rounded-full px-4 py-2 active:opacity-80 ${
-        selected ? 'bg-charcoal' : 'border border-hairline bg-surface'
+        selected ? 'bg-charcoal' : 'border-hairline bg-surface'
       }`}
     >
       <Text

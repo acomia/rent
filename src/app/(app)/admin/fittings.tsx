@@ -88,7 +88,7 @@ export default function AdminFittings() {
               accessibilityLabel="Previous week"
               onPress={() => setSelected(addDays(selected, -7))}
               hitSlop={6}
-              className="h-9 w-9 items-center justify-center rounded-full border border-hairline active:opacity-70"
+              className="h-9 w-9 items-center justify-center rounded-full border-hairline active:opacity-70"
             >
               <Feather name="chevron-left" size={17} color={INK} />
             </Pressable>
@@ -97,7 +97,7 @@ export default function AdminFittings() {
               accessibilityLabel="Next week"
               onPress={() => setSelected(addDays(selected, 7))}
               hitSlop={6}
-              className="h-9 w-9 items-center justify-center rounded-full border border-hairline active:opacity-70"
+              className="h-9 w-9 items-center justify-center rounded-full border-hairline active:opacity-70"
             >
               <Feather name="chevron-right" size={17} color={INK} />
             </Pressable>
@@ -168,7 +168,7 @@ export default function AdminFittings() {
                       params: { ref: b.ref },
                     })
                   }
-                  className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface p-4 active:opacity-90"
+                  className="flex-row items-center gap-3 rounded-2xl border-hairline bg-surface p-4 active:opacity-90"
                 >
                   <Text className="w-20 font-sans-semibold text-sm text-ink">
                     {formatTime(at)}

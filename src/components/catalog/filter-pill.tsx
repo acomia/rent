@@ -30,7 +30,7 @@ export function FilterPill({
       accessibilityState={{ selected: active }}
       onPress={onPress}
       className={`h-10 flex-row items-center gap-2 rounded-full px-4 active:opacity-80 ${
-        active ? 'bg-charcoal' : 'border border-hairline bg-surface'
+        active ? 'bg-charcoal' : 'border-hairline bg-surface'
       }`}
     >
       {icon ? <Feather name={icon} size={15} color={fg} /> : null}

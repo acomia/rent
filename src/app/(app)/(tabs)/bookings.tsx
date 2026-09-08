@@ -126,7 +126,7 @@ export default function Bookings() {
                         params: { id: b.ref },
                       })
                     }
-                    className="gap-3 rounded-2xl border border-hairline bg-surface p-3 active:opacity-90"
+                    className="gap-3 rounded-2xl border-hairline bg-surface p-3 active:opacity-90"
                   >
                     <BookingCard
                       name={b.itemName}

@@ -109,7 +109,7 @@ export function MonthCalendar({
             accessibilityLabel="Previous month"
             onPress={() => step(-1)}
             hitSlop={6}
-            className="h-9 w-9 items-center justify-center rounded-full border border-hairline active:opacity-70"
+            className="h-9 w-9 items-center justify-center rounded-full border-hairline active:opacity-70"
           >
             <Feather name="chevron-left" size={17} color={INK} />
           </Pressable>
@@ -118,7 +118,7 @@ export function MonthCalendar({
             accessibilityLabel="Next month"
             onPress={() => step(1)}
             hitSlop={6}
-            className="h-9 w-9 items-center justify-center rounded-full border border-hairline active:opacity-70"
+            className="h-9 w-9 items-center justify-center rounded-full border-hairline active:opacity-70"
           >
             <Feather name="chevron-right" size={17} color={INK} />
           </Pressable>

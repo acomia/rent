@@ -19,7 +19,7 @@ const base =
 const variants: Record<Variant, string> = {
   primary: 'bg-bronze',
   secondary: 'bg-bronze-soft',
-  outline: 'border border-hairline bg-transparent',
+  outline: 'border-hairline bg-transparent',
   commit: 'bg-charcoal',
 };
 

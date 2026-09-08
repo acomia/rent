@@ -62,7 +62,7 @@ export default function Summary() {
         />
 
         {draft.fittingAt ? (
-          <View className="flex-row items-center justify-between rounded-2xl border border-hairline bg-surface p-4">
+          <View className="flex-row items-center justify-between rounded-2xl border-hairline bg-surface p-4">
             <View className="gap-0.5">
               <Text className="font-sans-medium text-sm text-ink">
                 Fitting appointment
@@ -76,7 +76,7 @@ export default function Summary() {
               accessibilityRole="button"
               onPress={() => router.push('/(app)/reserve/fitting')}
               hitSlop={8}
-              className="rounded-full border border-hairline px-4 py-2 active:opacity-70"
+              className="rounded-full border-hairline px-4 py-2 active:opacity-70"
             >
               <Text className="font-sans-medium text-sm text-ink">Edit</Text>
             </Pressable>

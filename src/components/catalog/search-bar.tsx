@@ -9,7 +9,7 @@ import { MUTED, PLACEHOLDER } from './catalog-style';
  */
 export function SearchBar(props: TextInputProps) {
   return (
-    <View className="h-14 flex-row items-center gap-3 rounded-2xl border border-hairline bg-canvas-subtle px-4">
+    <View className="h-14 flex-row items-center gap-3 rounded-2xl border-hairline bg-canvas-subtle px-4">
       <Feather name="search" size={20} color={MUTED} />
       <TextInput
         placeholder="Search gowns, costumes…"

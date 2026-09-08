@@ -193,7 +193,7 @@ export default function EditProfile() {
             <Text className="font-sans-medium text-sm text-ink">
               Email address
             </Text>
-            <View className="flex-row items-center gap-2 rounded-2xl border border-hairline bg-canvas-subtle px-4 py-4">
+            <View className="flex-row items-center gap-2 rounded-2xl border-hairline bg-canvas-subtle px-4 py-4">
               <Feather name="lock" size={14} color={MUTED} />
               <Text className="flex-1 font-sans text-base text-muted">
                 {customer?.email ?? user?.email ?? '—'}
@@ -217,7 +217,7 @@ export default function EditProfile() {
                   Phone number
                 </Text>
                 <View className="flex-row items-center gap-2">
-                  <View className="flex-row items-center gap-1.5 rounded-2xl border border-hairline bg-canvas-subtle px-3 py-4">
+                  <View className="flex-row items-center gap-1.5 rounded-2xl border-hairline bg-canvas-subtle px-3 py-4">
                     <Text className="text-base">🇵🇭</Text>
                     <Text className="font-sans-medium text-base text-ink">
                       +63

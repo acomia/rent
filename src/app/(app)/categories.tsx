@@ -64,7 +64,7 @@ export default function Categories() {
                     }
                     className="flex-1 gap-3 active:opacity-90"
                   >
-                    <View className="aspect-[3/4] items-center justify-center overflow-hidden rounded-2xl border border-hairline bg-canvas-subtle">
+                    <View className="aspect-[3/4] items-center justify-center overflow-hidden rounded-2xl border-hairline bg-canvas-subtle">
                       {cover ? (
                         <Image
                           source={{ uri: cover }}

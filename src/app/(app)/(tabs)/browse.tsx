@@ -116,7 +116,7 @@ export default function Browse() {
                 }
                 className="flex-1 items-center gap-2 active:opacity-70"
               >
-                <View className="h-14 w-14 items-center justify-center rounded-2xl border border-hairline bg-surface">
+                <View className="h-14 w-14 items-center justify-center rounded-2xl border-hairline bg-surface">
                   <Glyph name={c.icon} size={24} color={MUTED} />
                 </View>
                 <Text className="font-sans-medium text-xs text-ink">

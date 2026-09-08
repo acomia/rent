@@ -70,7 +70,7 @@ export function QuickActionsSheet({
                   accessibilityRole="button"
                   accessibilityLabel={`${c.name}, ${c.count} items`}
                   onPress={() => onSelect(c)}
-                  className="flex-row items-center gap-3 rounded-2xl border border-hairline bg-surface p-3 active:opacity-85"
+                  className="flex-row items-center gap-3 rounded-2xl border-hairline bg-surface p-3 active:opacity-85"
                 >
                   <View className="h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-canvas-subtle">
                     {cover ? (

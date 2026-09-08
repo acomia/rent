@@ -43,7 +43,7 @@ export function CatalogEmpty({
 }) {
   return (
     <View className="items-center gap-3 py-16">
-      <View className="h-14 w-14 items-center justify-center rounded-full border border-hairline bg-canvas-subtle">
+      <View className="h-14 w-14 items-center justify-center rounded-full border-hairline bg-canvas-subtle">
         <Feather name="search" size={22} color={MUTED} />
       </View>
       <Text className="px-8 text-center font-sans text-base text-muted">

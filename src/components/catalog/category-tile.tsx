@@ -25,7 +25,7 @@ export function CategoryTile({
       onPress={onPress}
       className="flex-1 gap-3 active:opacity-90"
     >
-      <View className="aspect-[4/3] items-center justify-center rounded-2xl border border-hairline bg-canvas-subtle">
+      <View className="aspect-[4/3] items-center justify-center rounded-2xl border-hairline bg-canvas-subtle">
         <Glyph name={category.icon} size={38} color={MUTED} />
       </View>
       <View className="gap-0.5 px-0.5">

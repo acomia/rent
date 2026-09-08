@@ -30,7 +30,7 @@ export function AdminHeader({
           accessibilityLabel="Back"
           onPress={onBack}
           hitSlop={8}
-          className="h-10 w-10 items-center justify-center rounded-full border border-hairline bg-surface active:opacity-70"
+          className="h-10 w-10 items-center justify-center rounded-full border-hairline bg-surface active:opacity-70"
         >
           <Feather name="chevron-left" size={19} color={INK} />
         </Pressable>
