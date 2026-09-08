@@ -20,9 +20,11 @@ was added after it and is complete in the app, pending its migration being appli
 
 **Next up, in order:**
 
-1. **Apply `0016_home_content.sql`** to the dev project, then build the admin screen that edits
-   `shop_settings` / `home_slides` / `announcements`. Until the migration runs, Home renders its
-   fallbacks; until the screen exists, the content is SQL-editor-only.
+1. **Build the admin screen that edits `shop_settings` / `home_slides` / `announcements`.**
+   `0016` is applied and seeded — Home renders the real hero, the shop's Makati address and pickup
+   hours, and the announcement banner — but there is no UI for any of it, so the shop cannot change
+   a word without the SQL editor. Smallest remaining piece of Phase 3.6, and the one that makes the
+   phase's promise ("without a release") true.
 2. **Phase 5 payments.** This is a _hard_ dependency rather than a nice-to-have: RLS deliberately
    gives the client no path to mark its own deposit paid, so until the PayMongo webhook exists,
    bookings can only ever be created as `pending`. See the Phase 5 notes.
@@ -38,12 +40,21 @@ was added after it and is complete in the app, pending its migration being appli
    supposed to get right: who is holding the item, and from when. See Phase 7a and the Observed
    Workflow section of `project-scope.md`.
 
-**Environment:** the dev Supabase project (`rent-dev`) is live and seeded — 4 categories, 10 items,
-30 units, 2 customers, 1 admin. Migrations `0001`–`0013` are applied and verified. `0014` and `0015`
-(profile fields, avatar bucket) were written in the same phase — **confirm they are applied** before
-trusting the profile screens. **`0016` (home content) is not applied.** A Supabase MCP server is
-connected, so migrations can be applied and verified directly rather than pasted into the SQL editor
-by hand — and `get_advisors` run after each one.
+**Environment:** the dev Supabase project (`rent-dev`, Postgres 17, ap-southeast-1) is live and
+seeded. **All migrations `0001`–`0017` are applied** — confirmed against `list_migrations`, which
+tracks `0010`–`0017`; `0001`–`0009` predate migration tracking but every table and function they
+create is present. `public` holds 11 tables: `admin_audit_log`, `admin_invite_codes`, `admins`,
+`announcements`, `bookings`, `categories`, `customers`, `home_slides`, `item_units`, `items`,
+`shop_settings`. **`payments` and `notifications` do not exist** — Phases 5 and 6 have no schema at
+all yet.
+
+Live data is thin: 2 bookings, statuses `pending` and `approved` only. Nothing has ever reached
+`picked_up`, `returned` or `completed`, so the returns and pickup paths have never run against real
+rows. 0 `hold` rows, as expected. `pg_cron` is **not installed**, so `expire_stale_holds()` exists
+but is never scheduled.
+
+A Supabase MCP server is connected, so migrations can be applied and verified directly rather than
+pasted into the SQL editor by hand — and `get_advisors` run after each one.
 
 **No test runner is configured** (still true — no jest/vitest, no `test` script). Phase 4's
 availability and buffer maths were verified instead with behavioural SQL run against the live
@@ -331,15 +342,16 @@ category screens already do, on the one screen that should answer "what do I nee
 
 **Known gaps:**
 
-- **`0016` is not applied to the dev project.** Until it is, Home shows its fallbacks: no slides, no
-  shop address or pickup hours, no announcement.
 - **No admin UI for any of it** — `shop_settings`, `home_slides` and `announcements` are SQL-editor
-  only. This is the next task in the plan.
+  only. This is the next task in the plan. (`0016` itself is applied and seeded; Home renders the
+  real slides, address, pickup hours and announcement, confirmed on the simulator.)
 - Announcement dismissal is component state, so a dismissed banner returns on remount. Wants a
   per-customer dismissal row, or MMKV at minimum.
 - The "For an event" shortcut hardcodes `occasion: 'wedding'`, and the curated strip hardcodes its
   three queries. Fine while the shop has one obvious season; wants to be editorial content too.
-- Not run in the simulator — typecheck, lint and prettier pass, which is not the same thing.
+- Home, Browse, the product page, the size guide and the availability calendar have now been seen
+  running on the iOS simulator. The reserve flow past the calendar has not — synthetic taps could
+  not be driven reliably, so every screen from fulfilment onward is still unseen on device.
 
 **Done when:** Home tells a customer what they need to do next, Browse owns discovery, and the shop
 can change the hero, its own address and an announcement without a release. _The first two hold; the
@@ -359,9 +371,9 @@ Goal: booking is only confirmed once the deposit is paid online.
 > callback rather than on the success screen's render, precisely so the webhook can take that place
 > without the screens changing.
 >
-> The `payments` table is where payment state belongs, and **it does not exist yet** — it is the
-> first item of schema work in this phase (`0013` is `admin_reads_customers`; the next free number is
-> `0017`). Nothing in `bookings` should learn about money.
+> The `payments` table is where payment state belongs, and **it does not exist yet** (confirmed
+> against the live schema) — it is the first item of schema work in this phase. The next free
+> migration number is **`0018`**. Nothing in `bookings` should learn about money.
 
 - [ ] Decide cancellation/refund policy (Open Item #4) — include refund mechanics + who absorbs gateway fees
 - [ ] **Confirm how the deposit amount is actually computed** (Open Item #2). The app ships a flat
@@ -377,7 +389,7 @@ Goal: booking is only confirmed once the deposit is paid online.
 - [ ] Set up PayMongo SDK in Expo app
 - [ ] Set up Supabase edge function for PayMongo webhook
 - [ ] **Webhook must verify PayMongo signature and be idempotent** (dedupe on event id — webhooks retry and can arrive out of order/twice; otherwise bookings double-advance and payments double-record)
-- [ ] Create `payments` table (booking_id, type, amount, paymongo_id, `status`: paid / balance_due / refunded / forfeited) + RLS (customer sees own, admin sees all) — next migration number is `0017`
+- [ ] Create `payments` table (booking_id, type, amount, paymongo_id, `status`: paid / balance_due / refunded / forfeited) + RLS (customer sees own, admin sees all) — next migration number is `0018`
 - [~] Build deposit payment screen (GCash, GrabPay, Maya, card) — screen built
   (`reserve/payment.tsx`); the marks are coloured plates, so real brand assets are still needed,
   and nothing is wired to PayMongo
