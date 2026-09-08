@@ -87,7 +87,7 @@ export default function DateRange() {
           <RentalBandLegend />
         </View>
 
-        <View className="flex-row items-center justify-between border-t border-hairline pt-4">
+        <View className="flex-row items-center justify-between border-t-hairline pt-4">
           <Text className="font-sans text-sm text-muted">
             Rental fee ({days} {days === 1 ? 'day' : 'days'})
           </Text>
@@ -109,7 +109,7 @@ export default function DateRange() {
       </ScrollView>
 
       <View
-        className="border-t border-hairline px-5 pt-4"
+        className="border-t-hairline px-5 pt-4"
         style={{ paddingBottom: insets.bottom + 12 }}
       >
         <Button

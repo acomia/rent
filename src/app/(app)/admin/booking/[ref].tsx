@@ -287,7 +287,7 @@ export default function AdminBookingDetail() {
 
       {actions.length > 0 && !rejecting ? (
         <View
-          className="gap-3 border-t border-hairline px-5 pt-4"
+          className="gap-3 border-t-hairline px-5 pt-4"
           style={{ paddingBottom: insets.bottom + 12 }}
         >
           {actions.map((a) => (

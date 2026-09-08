@@ -127,7 +127,7 @@ export default function BookingDetail() {
 
       {booking.status === 'confirmed' ? (
         <View
-          className="border-t border-hairline px-5 pt-4"
+          className="border-t-hairline px-5 pt-4"
           style={{ paddingBottom: insets.bottom + 12 }}
         >
           <Button
@@ -142,7 +142,7 @@ export default function BookingDetail() {
         </View>
       ) : booking.status === 'completed' ? (
         <View
-          className="border-t border-hairline px-5 pt-4"
+          className="border-t-hairline px-5 pt-4"
           style={{ paddingBottom: insets.bottom + 12 }}
         >
           <Button

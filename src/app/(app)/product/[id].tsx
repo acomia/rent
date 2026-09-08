@@ -177,7 +177,7 @@ export default function ProductDetail() {
           stated here rather than stored per item. If any of these stops being
           true for some items, it becomes a column.
         */}
-        <View className="gap-3 border-t border-hairline pt-5">
+        <View className="gap-3 border-t-hairline pt-5">
           {[
             { icon: 'award' as const, label: 'Designer inspired' },
             { icon: 'check-circle' as const, label: 'Premium quality' },
@@ -215,7 +215,7 @@ export default function ProductDetail() {
       </ScrollView>
 
       <View
-        className="flex-row items-center gap-4 border-t border-hairline bg-canvas px-6 pt-4"
+        className="flex-row items-center gap-4 border-t-hairline bg-canvas px-6 pt-4"
         style={{ paddingBottom: insets.bottom + 12 }}
       >
         <View className="gap-0.5">

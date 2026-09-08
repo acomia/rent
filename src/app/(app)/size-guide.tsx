@@ -70,7 +70,7 @@ export default function SizeGuide() {
           {chart.rows.map((row, ri) => (
             <View
               key={row[0]}
-              className={`flex-row px-4 py-3.5 ${ri > 0 ? 'border-t border-hairline' : ''}`}
+              className={`flex-row px-4 py-3.5 ${ri > 0 ? 'border-t-hairline' : ''}`}
             >
               {row.map((cell, ci) => (
                 <Text

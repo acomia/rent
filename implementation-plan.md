@@ -20,21 +20,24 @@ was added after it and is complete in the app, pending its migration being appli
 
 **Next up, in order:**
 
-1. **Build the admin screen that edits `shop_settings` / `home_slides` / `announcements`.**
-   `0016` is applied and seeded — Home renders the real hero, the shop's Makati address and pickup
-   hours, and the announcement banner — but there is no UI for any of it, so the shop cannot change
-   a word without the SQL editor. Smallest remaining piece of Phase 3.6, and the one that makes the
-   phase's promise ("without a release") true.
+1. **Two decisions and one account, before any Phase 5 code.** Open Item #4 (cancellation and
+   refund policy) is the first task in that phase and is already overdue, since Cancel booking
+   ships today with no refund rule. The deposit rule (#2) is unknown, and Phase 5 wires PayMongo to
+   an amount. And the PayMongo test account is still unchecked in Phase 0. None of this is code.
 2. **Phase 5 payments.** This is a _hard_ dependency rather than a nice-to-have: RLS deliberately
    gives the client no path to mark its own deposit paid, so until the PayMongo webhook exists,
    bookings can only ever be created as `pending`. See the Phase 5 notes.
 3. **Booking → unit status transitions** (Phase 4) — still only partly driven by booking state:
    flagging condition on a return sets `item_units.status = 'damaged'`, but nothing moves a unit
    through rented/cleaning, and the admin item editor is still the only other writer.
-4. **Device verification of the admin screens and the payment stand-ins** — see the Phase 4 gaps.
-   The signed-in dev account is not an admin, so `AdminGate` bounces it; the data layer behind those
-   screens is verified as the admin via SQL, but the UI has not been seen.
-5. **Decide whether Phase 7a (customer-arranged courier pickup) enters v1.** Field observation says
+4. **Run the app on Android.** Phase 0 flagged this as "worth closing early" and it is still open
+   five phases later, while `DESIGN.md` states most of these customers are on mid-range Android.
+   Every phase since has been validated on the iOS simulator only — and the border bug fixed above
+   is exactly the class of thing that differs by platform.
+5. **Device verification of the admin screens and the payment stand-ins** — see the Phase 4 gaps.
+   The account in the simulator is a customer, so `AdminGate` bounces it; the `admins` table does
+   hold an owner account to sign in as. The reserve flow past the calendar is also unseen.
+6. **Decide whether Phase 7a (customer-arranged courier pickup) enters v1.** Field observation says
    this is already how items leave the shop — the customer books a Lalamove, sometimes the night
    before — and the app has no value for it. It is small, and it touches the one thing the app is
    supposed to get right: who is holding the item, and from when. See Phase 7a and the Observed
@@ -110,7 +113,9 @@ Goal: a real user can sign up, log in, and edit their profile.
 - [x] Build OTP verification screen (full `updateUser`→`verifyOtp` flow + `__DEV__` skip)
 - [x] Build login screen + "forgot password" flow (recovery-OTP based)
 - [x] Build session persistence + auth context (`AuthProvider` + `onAuthStateChange`, **MMKV** — synchronous, so Supabase's storage interface takes it with no async shim)
-- [x] Build profile screen (name, contact, email, address) — `@expo/ui` native form
+- [x] Build profile screen (name, contact, email, address) — plain RN + the shared `TextField`.
+      (An earlier note here claimed an `@expo/ui` native form; `@expo/ui` is installed but imported
+      nowhere in `src/`, so it is an unused dependency, not a pattern in use.)
 - [ ] ~~Add ID upload~~ — **deferred**, OTP-only KYC decision (Open Item #6)
 - [x] Add Terms & Conditions + Privacy Policy acceptance on signup (checkbox + atomic timestamp + `terms_version`)
 - [x] Create `customers` table with row-level security policy (`src/db/0001_customers.sql`)
@@ -218,7 +223,8 @@ Goal: customer can reserve an item for a date range or book a fitting; admin can
   `expire_stale_holds()`), and the customer-facing hold screen with its countdown is built. But
   **no hold row is ever created**: the app inserts `pending` directly, because a customer cannot
   transition their own hold to a paid booking under RLS (correctly — only the webhook may).
-  Closes with Phase 5. The `pg_cron` schedule for the sweeper is also not set up yet.
+  Closes with Phase 5. Note the sweeper is not merely unscheduled: **`pg_cron` is not installed**,
+  so enabling the extension is part of that task, not just adding a schedule.
 - [x] Add RLS policies to `bookings` — customer sees/creates only their own and may only cancel;
       admin sees and does everything. Verified **as the customer**, not as service role: inserting
       `approved` is rejected, and updating an own booking to `approved` is rejected.
@@ -285,6 +291,23 @@ Goal: customer can reserve an item for a date range or book a fitting; admin can
       the in-progress draft as client state in context and everything server-side on TanStack Query
 - [x] The rental band, status badge, month calendar, money block, booking card, selection card,
       payment-method row, flow stepper, disclosure row and pickup code components
+- [x] **`0018_trigger_function_grants.sql` — finished what 0012 started.** 0012 revoked RPC access
+      from four trigger functions; three were missed and the advisor had been reporting two of them
+      since. `handle_new_user()`, `log_admin_action()` and `set_updated_at()` are no longer callable
+      by `anon`/`authenticated`, and `set_updated_at` was the schema's last mutable `search_path`.
+      Applied and verified: all seven trigger functions now pin `search_path` and none is reachable
+      over RPC. Revoking EXECUTE does not stop a trigger from firing — privilege is checked when the
+      trigger is created, and 0012 already proved that on this project. `get_advisors` is now down
+      to four intentional definer functions (`is_admin`, `item_day_states`, `pick_free_unit`,
+      `verify_admin_invite_code`) plus `btree_gist` living in `public` (required by the exclusion
+      constraint) and `admin_invite_codes` deny-all-by-design.
+- [x] **Fixed the directional border bug.** `border-t border-hairline` drew a box, not a rule:
+      NativeWind's preset defines `borderWidth.hairline`, so the all-sides width applied to the
+      other three edges while `border-t` won only the top. Pixel-verified on the tab bar (a 1pt top
+      rule plus single hairline pixels left, right and bottom). Replaced across 18 sites in 15
+      files with `border-t-hairline` / `border-b-hairline`, which emit a side-scoped width AND the
+      side colour in one class, verified against the native build. Invisible on the full-bleed
+      elements; `product/[id].tsx` and `reserve/range.tsx` were drawing visible boxes mid-screen.
 
 **Still open before this phase can be called done:**
 
@@ -342,9 +365,14 @@ category screens already do, on the one screen that should answer "what do I nee
 
 **Known gaps:**
 
-- **No admin UI for any of it** — `shop_settings`, `home_slides` and `announcements` are SQL-editor
-  only. This is the next task in the plan. (`0016` itself is applied and seeded; Home renders the
-  real slides, address, pickup hours and announcement, confirmed on the simulator.)
+- ~~No admin UI for any of it~~ — **built.** `admin/shop.tsx` (the singleton form),
+  `admin/slides/` and `admin/announcements/` (list + editor each), reached from a new "Home" group
+  in the admin More tab, with `features/admin/home-{api,hooks}.ts` behind them. Slide images are
+  picked from photos already on catalog items rather than uploaded, so no bucket and no migration.
+  Both list screens report the states Home fails silently on: no slides / all slides off, and more
+  than one live announcement (Home renders only the first). **Never seen on a device** — the account
+  in the simulator is a customer, so `AdminGate` bounces it; the `admins` table does hold an owner
+  account to sign in as.
 - Announcement dismissal is component state, so a dismissed banner returns on remount. Wants a
   per-customer dismissal row, or MMKV at minimum.
 - The "For an event" shortcut hardcodes `occasion: 'wedding'`, and the curated strip hardcodes its
@@ -396,8 +424,9 @@ Goal: booking is only confirmed once the deposit is paid online.
 - [~] Handle PayMongo redirect/callback in app — `reserve/processing.tsx` stands in for it, with
   the staged progress and the failure state already designed
 - [ ] Webhook: mark deposit as paid → confirm the slot hold → transition booking to "awaiting approval" (release/refund on hold-conflict, per Phase 4 slot-hold rule)
-- [ ] Build payment receipt screen + Resend email with receipt — the "View receipt" buttons exist
-      on the success, confirmed and after-return screens but are inert
+- [ ] Build payment receipt screen + Resend email with receipt — there are two "View receipt"
+      buttons (`reserve/success.tsx`, `bookings/[id]/thanks.tsx`), now rendered **disabled** rather
+      than silently doing nothing on tap. Re-enable them here.
 - [ ] Build admin "record balance paid" action (in-shop balance)
 - [ ] Build admin **manual late-fee / penalty** entry (v1 records admin-entered amounts; automated formula is v2)
 - [ ] Build admin refund action (calls PayMongo refund API) + deposit-forfeit handling per cancellation policy

@@ -32,7 +32,7 @@ export function AdminTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View
-      className="border-t border-hairline bg-canvas px-2 pt-2"
+      className="border-t-hairline bg-canvas px-2 pt-2"
       style={{ paddingBottom: insets.bottom > 0 ? insets.bottom : 12 }}
     >
       <View className="flex-row items-start justify-around">

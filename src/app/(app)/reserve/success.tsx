@@ -62,7 +62,12 @@ export default function Success() {
             })
           }
         />
-        <Button label="View receipt" variant="outline" />
+        {/*
+          Disabled until Phase 5: nothing has actually been paid yet, so there
+          is no receipt to render. A button that silently does nothing on tap
+          reads as a broken app rather than an unfinished one.
+        */}
+        <Button label="View receipt" variant="outline" disabled />
       </View>
     </View>
   );

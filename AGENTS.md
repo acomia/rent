@@ -140,7 +140,7 @@ what the code assumes, so check here before designing anything in this area:
   the booking flow reads from it, so a change of shape there is not local. Don't
   build a deposit formula until that decision exists.
 
-**Database** (`src/db/*.sql`): numbered, ordered migrations through `0017`,
+**Database** (`src/db/*.sql`): numbered, ordered migrations through `0018`,
 applied by hand via the Supabase SQL editor (or `supabase db push`) — there is
 no migration runner in this repo. When adding a schema change, add the
 next-numbered `NNNN_*.sql` file rather than editing a past one. Every table has
@@ -157,7 +157,19 @@ theme, and `DESIGN.md` for what each token means. `src/components/ui/` holds
 generic primitives (button, text-field, tab-bar, status-badge);
 `src/components/catalog/`, `src/components/booking/`, `src/components/home/` and
 `src/components/admin/` hold feature-specific UI. Prettier auto-sorts Tailwind
-classes (`prettier-plugin-tailwindcss`) — don't hand-order them. The app is
+classes (`prettier-plugin-tailwindcss`) — don't hand-order them.
+
+**`border-hairline` already carries a width.** NativeWind's native preset
+defines `borderWidth.hairline`, so on native `border-hairline` emits _both_
+`border-width: hairlineWidth()` and the `#E5DDD0` colour, and it sorts after
+`.border`. So: never write `border border-hairline` (the `border` is dead — its
+1px is overridden), and never write `border-t border-hairline` (the all-sides
+width paints the other three edges, drawing a box instead of a rule). For a
+single-side rule use the side-scoped colour class alone — `border-t-hairline`
+or `border-b-hairline` — which emits a side width and a side colour and touches
+nothing else. Note this is native-only: the _web_ preset has no
+`borderWidth.hairline`, so these borders render nothing under `pnpm web`, which
+is accepted because `DESIGN.md` excludes any web layout. The app is
 **light-only**: `userInterfaceStyle: "light"` plus a fixed theme, and there are
 zero `dark:` variants left in `src/`. Don't add one — an ivory-and-bronze
 product has no honest inversion.

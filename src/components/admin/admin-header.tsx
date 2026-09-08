@@ -21,7 +21,7 @@ export function AdminHeader({
   const insets = useSafeAreaInsets();
   return (
     <View
-      className="flex-row items-center justify-between border-b border-hairline px-5 pb-3"
+      className="flex-row items-center justify-between border-b-hairline px-5 pb-3"
       style={{ paddingTop: insets.top + 12 }}
     >
       {onBack ? (
