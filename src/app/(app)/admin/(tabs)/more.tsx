@@ -32,7 +32,7 @@ export default function AdminMore() {
             first
             icon="clock"
             label="Fittings"
-            hint="Confirm and reschedule appointments"
+            hint="See the day's appointments, confirm or cancel"
             onPress={() => router.push('/admin/fittings')}
           />
           <SettingsRow
@@ -49,6 +49,33 @@ export default function AdminMore() {
             icon="tag"
             label="Categories"
             onPress={() => router.push('/admin/categories')}
+          />
+        </RowGroup>
+
+        {/*
+          Everything a customer reads on Home that is not the catalog. Grouped
+          apart from Catalog because it is editorial: copy and photography the
+          shop changes without anyone shipping a release.
+        */}
+        <RowGroup label="Home">
+          <SettingsRow
+            first
+            icon="map-pin"
+            label="Shop details"
+            hint="Address, pickup hours and the map link customers open"
+            onPress={() => router.push('/admin/shop')}
+          />
+          <SettingsRow
+            icon="image"
+            label="Hero slides"
+            hint="The carousel at the top of Home"
+            onPress={() => router.push('/admin/slides')}
+          />
+          <SettingsRow
+            icon="bell"
+            label="Announcements"
+            hint="Schedule a banner instead of remembering to remove it"
+            onPress={() => router.push('/admin/announcements')}
           />
         </RowGroup>
 

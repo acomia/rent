@@ -144,3 +144,97 @@ export const categorySchema = z.object({
 
 export type CategoryFormInput = z.input<typeof categorySchema>;
 export type CategoryFormValues = z.output<typeof categorySchema>;
+
+// --- Home content (0016_home_content.sql) ------------------------------------
+
+/** Optional free text: trimmed, capped, and empty-string means "unset". */
+function optionalText(max: number) {
+  return z.string().trim().max(max);
+}
+
+/**
+ * A shop opening/closing time as `HH:MM` text.
+ *
+ * Deliberately not a native time picker: `@expo/ui`'s is platform-split, and
+ * DESIGN.md rules out depending on an iOS-only affordance. Empty means "not
+ * set", which Home already renders as nothing (`formatShopTime` is null-safe).
+ */
+function timeField() {
+  return z
+    .string()
+    .trim()
+    .refine(
+      (v) => v === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(v),
+      'Use 24-hour HH:MM, e.g. 10:00 or 19:30',
+    );
+}
+
+export const shopSettingsSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(80),
+  addressLine: optionalText(160),
+  city: optionalText(80),
+  pickupLabel: optionalText(40),
+  mapUrl: optionalText(500),
+  phone: optionalText(40),
+  pickupFrom: timeField(),
+  pickupTo: timeField(),
+});
+
+export type ShopSettingsFormInput = z.input<typeof shopSettingsSchema>;
+export type ShopSettingsFormValues = z.output<typeof shopSettingsSchema>;
+
+/**
+ * `cta_route` is an in-app Expo Router path, not a URL — the hero button
+ * navigates rather than opening a browser. Constrained to a leading slash so a
+ * pasted `https://…` fails here instead of silently doing nothing on tap.
+ */
+export const slideSchema = z.object({
+  headline: z.string().trim().min(1, 'Headline is required').max(80),
+  subhead: optionalText(160),
+  ctaLabel: optionalText(40),
+  ctaRoute: optionalText(120).refine(
+    (v) => v === '' || v.startsWith('/'),
+    'An in-app path starting with “/”, e.g. /categories',
+  ),
+  imageUrl: optionalText(500),
+  sortOrder: countField(),
+  isActive: z.boolean(),
+});
+
+export type SlideFormInput = z.input<typeof slideSchema>;
+export type SlideFormValues = z.output<typeof slideSchema>;
+
+/**
+ * `actionUrl` IS an external URL (the seeded announcement opens a maps link),
+ * which is why it is validated differently from a slide's `ctaRoute`.
+ *
+ * The window is stored as nullable ISO timestamps. RLS enforces it, so a
+ * scheduled announcement is invisible to customers until it starts — the whole
+ * point of the column, per the migration.
+ */
+export const announcementSchema = z
+  .object({
+    title: z.string().trim().min(1, 'Title is required').max(80),
+    body: optionalText(400),
+    actionLabel: optionalText(40),
+    actionUrl: optionalText(500),
+    isActive: z.boolean(),
+    startsAt: z.string().nullable(),
+    endsAt: z.string().nullable(),
+  })
+  .refine(
+    (v) =>
+      !v.startsAt || !v.endsAt || new Date(v.endsAt) > new Date(v.startsAt),
+    {
+      message: 'The end date must be after the start date',
+      path: ['endsAt'],
+    },
+  )
+  .refine((v) => !v.actionUrl || Boolean(v.actionLabel), {
+    message:
+      'A link needs a button label, or the customer sees no way to open it',
+    path: ['actionLabel'],
+  });
+
+export type AnnouncementFormInput = z.input<typeof announcementSchema>;
+export type AnnouncementFormValues = z.output<typeof announcementSchema>;
