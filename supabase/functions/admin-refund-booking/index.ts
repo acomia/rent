@@ -7,6 +7,7 @@
 // one failed.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { jsonResponse } from '../_shared/http.ts';
 import { refundPayment } from '../_shared/paymongo.ts';
 
 Deno.serve(async (req) => {
@@ -16,20 +17,16 @@ Deno.serve(async (req) => {
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
-    return new Response(
-      JSON.stringify({ error: 'Missing Authorization header' }),
-      {
-        status: 401,
-      },
+    return jsonResponse(
+      { error: 'Missing Authorization header' },
+      { status: 401 },
     );
   }
 
   const { reference, action, reason } = await req.json();
   if (!reference || !['reject', 'cancel'].includes(action) || !reason?.trim()) {
-    return new Response(
-      JSON.stringify({
-        error: 'reference, action (reject|cancel), and reason are required',
-      }),
+    return jsonResponse(
+      { error: 'reference, action (reject|cancel), and reason are required' },
       { status: 400 },
     );
   }
@@ -42,9 +39,7 @@ Deno.serve(async (req) => {
 
   const { data: isAdmin } = await callerClient.rpc('is_admin');
   if (!isAdmin) {
-    return new Response(JSON.stringify({ error: 'Admin only' }), {
-      status: 403,
-    });
+    return jsonResponse({ error: 'Admin only' }, { status: 403 });
   }
 
   const db = createClient(
@@ -58,13 +53,9 @@ Deno.serve(async (req) => {
     .eq('reference', reference)
     .maybeSingle();
   if (bookingError)
-    return new Response(JSON.stringify({ error: bookingError.message }), {
-      status: 500,
-    });
+    return jsonResponse({ error: bookingError.message }, { status: 500 });
   if (!booking)
-    return new Response(JSON.stringify({ error: 'Booking not found' }), {
-      status: 404,
-    });
+    return jsonResponse({ error: 'Booking not found' }, { status: 404 });
 
   const { data: payment } = await db
     .from('payments')
@@ -75,12 +66,24 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (payment?.paymongo_payment_id) {
-    const refund = await refundPayment({
-      paymongoPaymentId: payment.paymongo_payment_id,
-      amountCentavos: Math.round(Number(payment.amount) * 100),
-      reason: 'others',
-      notes: reason,
-    });
+    let refund: { id: string; status: string };
+    try {
+      refund = await refundPayment({
+        paymongoPaymentId: payment.paymongo_payment_id,
+        amountCentavos: Math.round(Number(payment.amount) * 100),
+        reason: 'others',
+        notes: reason,
+      });
+    } catch (e) {
+      // `refundPayment` throws on a non-2xx HTTP response from PayMongo
+      // (e.g. `available_balance_insufficient` on a test account) — surface
+      // it as a clean error instead of crashing with an unhandled exception,
+      // which the client SDK reports as an unhelpful "non-2xx status code".
+      return jsonResponse(
+        { error: e instanceof Error ? e.message : 'Refund request failed' },
+        { status: 502 },
+      );
+    }
     // `refundPayment` only throws on a non-2xx HTTP response — a 2xx response
     // can still carry a business-level `failed`/`declined` refund status. Check
     // that FIRST: only a genuinely succeeded/pending refund may mark the
@@ -88,11 +91,9 @@ Deno.serve(async (req) => {
     // leave the payment's `paid` status alone rather than recording a refund
     // that didn't happen, and never advance the booking either.
     if (refund.status !== 'succeeded' && refund.status !== 'pending') {
-      return new Response(
-        JSON.stringify({ error: `Refund did not succeed: ${refund.status}` }),
-        {
-          status: 502,
-        },
+      return jsonResponse(
+        { error: `Refund did not succeed: ${refund.status}` },
+        { status: 502 },
       );
     }
     await db
@@ -121,10 +122,8 @@ Deno.serve(async (req) => {
     .update(patch)
     .eq('id', booking.id);
   if (updateError) {
-    return new Response(JSON.stringify({ error: updateError.message }), {
-      status: 500,
-    });
+    return jsonResponse({ error: updateError.message }, { status: 500 });
   }
 
-  return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  return jsonResponse({ ok: true }, { status: 200 });
 });

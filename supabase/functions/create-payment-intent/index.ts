@@ -4,6 +4,7 @@
 // if already in flight) a PayMongo Payment Intent for that hold's deposit.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { jsonResponse } from '../_shared/http.ts';
 import { createPaymentIntent } from '../_shared/paymongo.ts';
 
 Deno.serve(async (req) => {
@@ -13,19 +14,15 @@ Deno.serve(async (req) => {
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
-    return new Response(
-      JSON.stringify({ error: 'Missing Authorization header' }),
-      {
-        status: 401,
-      },
+    return jsonResponse(
+      { error: 'Missing Authorization header' },
+      { status: 401 },
     );
   }
 
   const { bookingId } = await req.json();
   if (!bookingId) {
-    return new Response(JSON.stringify({ error: 'bookingId is required' }), {
-      status: 400,
-    });
+    return jsonResponse({ error: 'bookingId is required' }, { status: 400 });
   }
 
   // Scoped to the caller's own session, so `bookings_select_own_or_admin`
@@ -48,27 +45,19 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (bookingError) {
-    return new Response(JSON.stringify({ error: bookingError.message }), {
-      status: 500,
-    });
+    return jsonResponse({ error: bookingError.message }, { status: 500 });
   }
   if (!booking) {
-    return new Response(JSON.stringify({ error: 'Booking not found' }), {
-      status: 404,
-    });
+    return jsonResponse({ error: 'Booking not found' }, { status: 404 });
   }
   if (booking.status !== 'hold') {
-    return new Response(
-      JSON.stringify({ error: 'This booking is not an active hold' }),
-      {
-        status: 409,
-      },
+    return jsonResponse(
+      { error: 'This booking is not an active hold' },
+      { status: 409 },
     );
   }
   if (new Date(booking.hold_expires_at as string) < new Date()) {
-    return new Response(JSON.stringify({ error: 'This hold has expired' }), {
-      status: 409,
-    });
+    return jsonResponse({ error: 'This hold has expired' }, { status: 409 });
   }
 
   // Service-role client for writing `payments`, which no client session may
@@ -100,11 +89,11 @@ Deno.serve(async (req) => {
     );
     const json = await res.json();
     if (res.ok && json?.data?.attributes?.client_key) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           clientKey: json.data.attributes.client_key,
           paymentIntentId: existing.paymongo_payment_intent_id,
-        }),
+        },
         { status: 200 },
       );
     }
@@ -139,16 +128,11 @@ Deno.serve(async (req) => {
     paymongo_payment_intent_id: intent.id,
   });
   if (insertError) {
-    return new Response(JSON.stringify({ error: insertError.message }), {
-      status: 500,
-    });
+    return jsonResponse({ error: insertError.message }, { status: 500 });
   }
 
-  return new Response(
-    JSON.stringify({
-      clientKey: intent.attributes.client_key,
-      paymentIntentId: intent.id,
-    }),
+  return jsonResponse(
+    { clientKey: intent.attributes.client_key, paymentIntentId: intent.id },
     { status: 200 },
   );
 });

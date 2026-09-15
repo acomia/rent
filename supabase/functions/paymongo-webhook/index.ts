@@ -10,6 +10,7 @@
 // — no PayMongo account exists yet to verify it against.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { jsonResponse } from '../_shared/http.ts';
 import { refundPayment, verifyWebhookSignature } from '../_shared/paymongo.ts';
 
 Deno.serve(async (req) => {
@@ -21,9 +22,7 @@ Deno.serve(async (req) => {
   const signature = req.headers.get('Paymongo-Signature');
   const valid = await verifyWebhookSignature(rawBody, signature);
   if (!valid) {
-    return new Response(JSON.stringify({ error: 'Invalid signature' }), {
-      status: 400,
-    });
+    return jsonResponse({ error: 'Invalid signature' }, { status: 400 });
   }
 
   const event = JSON.parse(rawBody);
@@ -44,17 +43,13 @@ Deno.serve(async (req) => {
     .from('payment_events')
     .insert({ id: eventId });
   if (dedupeError) {
-    return new Response(JSON.stringify({ ok: true, duplicate: true }), {
-      status: 200,
-    });
+    return jsonResponse({ ok: true, duplicate: true }, { status: 200 });
   }
 
   if (!paymentIntentId) {
-    return new Response(
-      JSON.stringify({ ok: true, ignored: 'no payment_intent_id' }),
-      {
-        status: 200,
-      },
+    return jsonResponse(
+      { ok: true, ignored: 'no payment_intent_id' },
+      { status: 200 },
     );
   }
 
@@ -66,11 +61,9 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (!payment) {
-    return new Response(
-      JSON.stringify({ ok: true, ignored: 'unknown payment_intent_id' }),
-      {
-        status: 200,
-      },
+    return jsonResponse(
+      { ok: true, ignored: 'unknown payment_intent_id' },
+      { status: 200 },
     );
   }
 
@@ -100,9 +93,7 @@ Deno.serve(async (req) => {
         'paymongo-webhook: failed to advance booking to pending',
         advanceError,
       );
-      return new Response(JSON.stringify({ error: advanceError.message }), {
-        status: 500,
-      });
+      return jsonResponse({ error: advanceError.message }, { status: 500 });
     }
 
     if (!advanced || advanced.length === 0) {
@@ -124,22 +115,18 @@ Deno.serve(async (req) => {
           refund_reason: 'Hold expired before payment confirmation could land',
         })
         .eq('id', payment.id);
-      return new Response(JSON.stringify({ ok: true, refunded: refund.id }), {
-        status: 200,
-      });
+      return jsonResponse({ ok: true, refunded: refund.id }, { status: 200 });
     }
 
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    return jsonResponse({ ok: true }, { status: 200 });
   }
 
   if (eventType === 'payment.failed') {
     // Leave the hold running — the customer can retry with another method
     // before the countdown actually runs out.
     await db.from('payments').update({ status: 'failed' }).eq('id', payment.id);
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    return jsonResponse({ ok: true }, { status: 200 });
   }
 
-  return new Response(JSON.stringify({ ok: true, ignored: eventType }), {
-    status: 200,
-  });
+  return jsonResponse({ ok: true, ignored: eventType }, { status: 200 });
 });
