@@ -164,6 +164,19 @@ Payment processing requires PayMongo integration. This is a one-time setup:
    - Copy the test **Public Key** (starts with `pk_test_`) and test **Secret Key**
      (starts with `sk_test_`).
 
+Before the next step, authenticate the Supabase CLI. The `supabase secrets set`
+command requires authentication:
+
+```bash
+supabase login
+```
+
+This opens a browser to log into your Supabase account — it needs a real
+interactive terminal (not a non-interactive/scripted session). If you'd rather
+not use the browser flow, generate a personal access token at
+https://supabase.com/dashboard/account/tokens and run
+`supabase login --token <token>` instead.
+
 3. **Set edge function secrets** in Supabase. These secrets power the webhook and
    payment-processing edge function:
 
