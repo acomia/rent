@@ -25,7 +25,7 @@ const TYPE_LABEL: Record<string, string> = {
 export default function Receipt() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: payments, isLoading } = usePayments(id);
+  const { data: payments, isLoading, isError } = usePayments(id);
 
   return (
     <View className="flex-1 bg-canvas">
@@ -34,7 +34,11 @@ export default function Receipt() {
         className="flex-1 px-5 pt-4"
         style={{ paddingBottom: insets.bottom + 12 }}
       >
-        {isLoading ? null : !payments || payments.length === 0 ? (
+        {isLoading ? null : isError ? (
+          <Text className="text-center font-sans text-base text-muted">
+            Couldn&apos;t load your receipt. Please try again.
+          </Text>
+        ) : !payments || payments.length === 0 ? (
           <Text className="text-center font-sans text-base text-muted">
             No payments recorded for this booking yet.
           </Text>
