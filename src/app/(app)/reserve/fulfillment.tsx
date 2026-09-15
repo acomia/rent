@@ -6,7 +6,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlowHeader } from '@/components/booking/flow-header';
 import { SelectionCard } from '@/components/booking/selection-card';
 import { Button } from '@/components/ui/button';
+import { today as todayFn } from '@/features/booking/availability';
 import { useBooking } from '@/features/booking/booking-context';
+import {
+  daysBetween,
+  FITTING_BUFFER_DAYS,
+  fromKey,
+} from '@/features/booking/dates';
 import type { FulfillmentType } from '@/features/booking/types';
 
 /**
@@ -17,8 +23,19 @@ import type { FulfillmentType } from '@/features/booking/types';
 export default function Fulfillment() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { setFulfillment } = useBooking();
-  const [choice, setChoice] = useState<FulfillmentType>('pickup');
+  const { draft, setFulfillment } = useBooking();
+  const [rawChoice, setChoice] = useState<FulfillmentType>('pickup');
+
+  // A fitting needs a day that is both past the lead-time buffer and on or
+  // before the return date. If the rental itself starts within the buffer,
+  // no such day exists — offering the option would walk the customer into an
+  // empty calendar.
+  const fittingAvailable = draft?.ret
+    ? daysBetween(todayFn(), fromKey(draft.ret)) >= FITTING_BUFFER_DAYS
+    : true;
+  // Falls back to pickup if the dates changed out from under an already-made
+  // 'fitting' choice (e.g. the customer went back and picked closer dates).
+  const choice = fittingAvailable ? rawChoice : 'pickup';
 
   function onContinue() {
     setFulfillment(choice);
@@ -49,9 +66,14 @@ export default function Fulfillment() {
           />
           <SelectionCard
             title="Fitting appointment"
-            description="Try it on at our store first. Booking a fitting does not reserve your rental dates."
+            description={
+              fittingAvailable
+                ? 'Try it on at our store first. Booking a fitting does not reserve your rental dates.'
+                : "Your rental starts too soon for a fitting — there's no day left to try it on beforehand."
+            }
             selected={choice === 'fitting'}
             onPress={() => setChoice('fitting')}
+            disabled={!fittingAvailable}
           />
         </View>
       </ScrollView>

@@ -23,9 +23,10 @@ export default function Signup() {
     control,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
   } = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),
+    mode: 'onChange',
     defaultValues: {
       fullName: '',
       email: '',
@@ -284,6 +285,7 @@ export default function Signup() {
       <Button
         label="Create account"
         loading={isSubmitting}
+        disabled={!isValid}
         onPress={handleSubmit(onSubmit)}
       />
 

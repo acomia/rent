@@ -12,22 +12,25 @@ export function SelectionCard({
   description,
   selected,
   onPress,
+  disabled = false,
 }: {
   title: string;
   description: string;
   selected: boolean;
   onPress: () => void;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
       accessibilityRole="radio"
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled}
       onPress={onPress}
       className={`flex-row items-start gap-3 rounded-2xl border p-4 active:opacity-90 ${
         selected
           ? 'border-bronze bg-bronze-soft/40'
           : 'border-hairline bg-surface'
-      }`}
+      } ${disabled ? 'opacity-40' : ''}`}
     >
       <View
         className="mt-0.5 h-5 w-5 items-center justify-center rounded-full border-2"
