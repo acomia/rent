@@ -52,6 +52,14 @@ export type Booking = {
   paidOnline: number;
 };
 
+export type PaymentRecord = {
+  type: 'deposit' | 'balance' | 'penalty';
+  amount: number;
+  status: 'processing' | 'paid' | 'failed' | 'refunded' | 'forfeited';
+  paidAt: string | null;
+  refundedAt: string | null;
+};
+
 /** The in-progress booking, filled in screen by screen. */
 export type BookingDraft = {
   itemId: string;

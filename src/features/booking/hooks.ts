@@ -15,6 +15,7 @@ import {
   fetchBookings,
   fetchDayStates,
   fetchHoldStatus,
+  fetchPayments,
   type CreateHoldInput,
 } from './api';
 import { toKey } from './dates';
@@ -93,6 +94,14 @@ export function useHoldStatus(
     enabled: opts.enabled && Boolean(bookingId),
     refetchInterval: (query) => (query.state.data === 'hold' ? 2000 : false),
     staleTime: 0,
+  });
+}
+
+export function usePayments(reference: string | undefined) {
+  return useQuery({
+    queryKey: ['bookings', 'payments', reference ?? ''],
+    queryFn: () => fetchPayments(reference as string),
+    enabled: Boolean(reference),
   });
 }
 

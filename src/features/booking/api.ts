@@ -18,7 +18,12 @@ import { requireDb, supabase } from '@/lib/supabase';
 import { dayState as localDayState, today } from './availability';
 import { addDays, daysBetween, fromKey, toKey, type DayKey } from './dates';
 import { quote } from './pricing';
-import type { Booking, BookingStatus, FulfillmentType } from './types';
+import type {
+  Booking,
+  BookingStatus,
+  FulfillmentType,
+  PaymentRecord,
+} from './types';
 
 /** Postgres exclusion-constraint violation — the dates were taken first. */
 const OVERLAP_CODE = '23P01';
@@ -295,4 +300,34 @@ export async function cancelBooking(reference: string): Promise<void> {
     .update({ status: 'cancelled' })
     .eq('reference', reference);
   if (error) throw error;
+}
+
+// --- Payments (Phase 5) -------------------------------------------------------
+
+export async function fetchPayments(
+  reference: string,
+): Promise<PaymentRecord[]> {
+  if (!supabase) return [];
+  const { data: booking, error: bookingError } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('reference', reference)
+    .maybeSingle();
+  if (bookingError) throw bookingError;
+  if (!booking) return [];
+
+  const { data, error } = await supabase
+    .from('payments')
+    .select('type, amount, status, paid_at, refunded_at')
+    .eq('booking_id', booking.id)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    type: row.type as PaymentRecord['type'],
+    amount: Number(row.amount),
+    status: row.status as PaymentRecord['status'],
+    paidAt: row.paid_at as string | null,
+    refundedAt: row.refunded_at as string | null,
+  }));
 }
