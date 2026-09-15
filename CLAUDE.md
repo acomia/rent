@@ -28,10 +28,16 @@ prettier) on staged files automatically.
 Package manager is **pnpm** — never use npm/yarn (`node-linker=hoisted` in `.npmrc`,
 so no npm workspace nesting quirks to work around).
 
-`ios/` and `android/` are committed, and both are **out of sync with `app.json`**:
-the native projects are still `Rent.xcodeproj` / `com.arnancomia.rent` while
-`app.json` says `com.arnancomia.renta`. Harmless in dev, but an `expo prebuild`
-is required before an EAS build or a store submission.
+`ios/` and `android/` are both gitignored (`/ios`, `/android` in `.gitignore`), not committed —
+each checkout or worktree regenerates them itself. `ios/` rebuilds fresh from `app.json` on every
+`pnpm ios` run, so it's never stale. `android/` does **not** get the same prebuild-on-missing
+treatment — it persists once generated and does not resync with `app.json` on its own, so if it
+was generated before an identifier change (e.g. the `Rent` → `Renta` rebrand: bundle id
+`com.arnancomia.rent`/scheme `rent://` vs. `app.json`'s `com.arnancomia.renta`/`renta://`) it goes
+stale silently. This is not just a store-submission concern: a stale scheme breaks any flow that
+depends on the app's own deep link, e.g. PayMongo's checkout redirect never returns control to the
+app on Android. If `pnpm android` is ever pointing at a different applicationId than `app.json`,
+run `npx expo prebuild --clean` to regenerate both native projects from the current config.
 
 ## Architecture
 

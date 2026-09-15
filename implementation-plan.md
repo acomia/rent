@@ -32,16 +32,37 @@ Resend email receipts and the hold-conflict race test are the two pieces still o
    answered by the shop — the code quietly encodes an answer anyway (self-cancel forfeits the
    deposit, admin reject/cancel refunds it), which works but isn't a signed-off policy.
 2. **Booking → unit status transitions** (Phase 4) — **done**, `0022_unit_status_transitions.sql`.
-3. **Finish the Android pass.** The first Android run happened (Pixel 7 emulator) and Home is
-   clean, but only the auth screens and Home have been seen there — the reserve flow, the admin
-   area and returns have not, and nothing has run on a physical device. `DESIGN.md` states most of
-   these customers are on mid-range Android, so this stays on the list until the booking flow has
-   been walked end to end there. Note `adb shell input tap` drives Android reliably, unlike the
-   synthetic-tap route on the iOS simulator.
-4. **Device verification of the admin screens and the payment stand-ins** — largely covered for the
-   payment flow (the admin reject/refund action was driven live on the iOS simulator during Phase 5
-   QA), but only on iOS simulator, not Android or a physical device. The reserve flow past the
-   calendar is also still otherwise unseen outside Phase 5's own walkthrough.
+3. **Android pass — done on the Pixel 7 API 35 emulator** (`adb shell input tap` + `uiautomator
+dump` for exact element bounds drives Android reliably, unlike synthetic taps on the iOS
+   simulator). Walked customer signup → Home → Browse → product → full reserve flow (dates,
+   fulfillment, summary, hold countdown, payment method, a real GCash test payment, success,
+   confirmed) and, for the first time on any device, the whole admin side: sign-up via shop invite
+   code, dashboard, booking queue, approve → mark picked up → the three-step return flow, and the
+   More menu (Fittings, Returns, Categories, Shop details, Hero slides, Announcements). Also
+   verified `0022`'s unit-status trigger against real usage, not just synthetic SQL: `approved` →
+   `reserved`, `picked_up` → `rented`, returned-in-good-condition → `under_cleaning`. **Still not
+   done: a physical device.**
+
+   One real, Android-specific bug found and **fixed**: `android/` was stale — `applicationId
+'com.arnancomia.rent'` and intent-filter scheme `rent://`, dated Jul 4, predating the Renta
+   rebrand and never regenerated (unlike `ios/`, which is gitignored and rebuilds fresh from
+   `app.json` every run — `android/` apparently doesn't get the same prebuild-on-missing treatment,
+   or was committed at some point and never removed). Since PayMongo's redirect flow depends on the
+   app's own `renta://` deep link to hand control back after payment, the in-app browser hung
+   forever after a successful GCash payment on Android specifically — stuck on PayMongo's own
+   "consumed status" screen with no way forward except the customer manually closing the tab. The
+   payment itself always succeeded server-side (webhook fires, booking advances, `payments.status`
+   → `paid`) and `processing.tsx`'s polling-based fallback recovered correctly once the tab was
+   closed, so nothing was actually lost — but a real customer had no indication they needed to close
+   it themselves. This is the same drift Phase 3.5 already flagged as needing `expo prebuild` before
+   an EAS build; it turned out to also be a live functional bug in dev, not only a store-submission
+   blocker. Fixed with `expo prebuild --clean` (`android/` and `ios/` both regenerated from the
+   current `app.json`: `com.arnancomia.renta` / scheme `renta://`) and reverified end-to-end — the
+   same GCash test payment now returns control to the app automatically within seconds, no manual
+   close needed.
+
+4. **Device verification of the admin screens and the payment stand-ins — done** (see #3). Only a
+   physical device remains unverified.
 5. **Decide whether Phase 7a (customer-arranged courier pickup) enters v1.** Field observation says
    this is already how items leave the shop — the customer books a Lalamove, sometimes the night
    before — and the app has no value for it. It is small, and it touches the one thing the app is
@@ -208,10 +229,10 @@ it. Driven by the design board in `DESIGN.md`.
 **Deliberately not done:** a dark variant. The board is light-only and the tokens exist but go unused.
 
 **Known gaps:** category tiles render a glyph rather than a photograph, because `categories` has no
-photo column and the board shows photos — either add the column or accept the glyph. The rename is
-only partly real: the **native project is still `Rent.xcodeproj` with bundle id
-`com.arnancomia.rent`**, because `app.json` was updated without an `expo prebuild`. Harmless locally,
-but it must be resolved before an EAS build or a store submission.
+photo column and the board shows photos — either add the column or accept the glyph. The native
+project drift (`Rent.xcodeproj` / `com.arnancomia.rent`, `app.json` updated without an `expo
+prebuild`) turned out not to be dev-harmless after all — see the Android pass note under "Next up"
+— and was fixed there with `expo prebuild --clean`.
 
 ---
 
