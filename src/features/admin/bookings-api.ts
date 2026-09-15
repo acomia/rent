@@ -282,36 +282,21 @@ export async function recordPenalty(input: {
  * `blocked_range`, so nothing further has to hold them. The `returned` status is
  * left unused in v1 — it exists for the richer cleaning queue in v2.
  *
- * A garment flagged as needing attention also marks its physical unit `damaged`,
- * which takes that copy out of `item_day_states` until someone clears it. This is
- * the minimum honest version of damage handling; photographs and costs are v2.
+ * `needs_attention` moves with the same update — `bookings_sync_item_unit_status`
+ * (0022) reads it from the row being updated and sets the physical unit to
+ * `damaged` or `under_cleaning` accordingly, atomically with this one call. This
+ * is the minimum honest version of damage handling; photographs and costs are v2.
  */
 export async function markReturned(input: {
   reference: string;
   needsAttention: boolean;
 }): Promise<void> {
   const db = requireDb();
-
-  const { data: row, error: readError } = await db
-    .from('bookings')
-    .select('unit_id')
-    .eq('reference', input.reference)
-    .single();
-  if (readError) throw readError;
-
   const { error } = await db
     .from('bookings')
-    .update({ status: 'completed' })
+    .update({ status: 'completed', needs_attention: input.needsAttention })
     .eq('reference', input.reference);
   if (error) throw error;
-
-  if (input.needsAttention && row?.unit_id) {
-    const { error: unitError } = await db
-      .from('item_units')
-      .update({ status: 'damaged' })
-      .eq('id', row.unit_id as string);
-    if (unitError) throw unitError;
-  }
 }
 
 export async function updateFittingStatus(input: {
