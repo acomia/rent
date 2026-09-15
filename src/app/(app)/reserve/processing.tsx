@@ -61,7 +61,8 @@ export default function Processing() {
     );
   }
 
-  const failed = status.data === 'failed' || status.data === 'gone';
+  const failed =
+    (status.data === 'failed' || status.data === 'gone') && !status.isFetching;
 
   if (failed) {
     return (
