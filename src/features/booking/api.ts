@@ -182,7 +182,7 @@ export async function fetchBooking(reference: string): Promise<Booking | null> {
 
 // --- Writing -----------------------------------------------------------------
 
-export type CreateBookingInput = {
+export type CreateHoldInput = {
   itemId: string;
   pickup: DayKey;
   ret: DayKey;
@@ -191,17 +191,16 @@ export type CreateBookingInput = {
   size?: string | null;
 };
 
+const HOLD_MINUTES = 15;
+
 /**
- * Reserves the dates.
- *
- * Inserted as 'pending' (awaiting the shop's approval), NOT as a paid booking:
- * only the PayMongo webhook may mark a deposit paid, and RLS deliberately gives
- * the client no path to self-approve. When Phase 5 lands this becomes a 'hold'
- * insert here plus a webhook that advances it — the screens do not change.
+ * Reserves the dates as a checkout hold, NOT a paid booking. Payment happens
+ * next (`createPaymentIntent`); only the PayMongo webhook may advance this
+ * past `hold` (see `reserve/processing.tsx`).
  */
-export async function createBooking(
-  input: CreateBookingInput,
-): Promise<string> {
+export async function createHold(
+  input: CreateHoldInput,
+): Promise<{ id: string; reference: string; holdExpiresAt: string }> {
   const db = requireDb();
 
   const { data: userData, error: userError } = await db.auth.getUser();
@@ -218,6 +217,10 @@ export async function createBooking(
   if (pickError) throw pickError;
   if (!unitId) throw new SlotTakenError();
 
+  const holdExpiresAt = new Date(
+    Date.now() + HOLD_MINUTES * 60_000,
+  ).toISOString();
+
   const { data, error } = await db
     .from('bookings')
     .insert({
@@ -226,21 +229,47 @@ export async function createBooking(
       unit_id: unitId as string,
       pickup_date: input.pickup,
       return_date: input.ret,
-      status: 'pending',
+      status: 'hold',
+      hold_expires_at: holdExpiresAt,
       fulfillment_type: input.fulfillment,
       fitting_at: input.fittingAt,
       fitting_status: input.fittingAt ? 'requested' : null,
     })
-    .select('reference')
+    .select('id, reference, hold_expires_at')
     .single();
 
-  // Another customer won the same unit between pick and insert. The constraint
-  // is the arbiter, so this path is expected under load, not exceptional.
   if (error) {
     if (error.code === OVERLAP_CODE) throw new SlotTakenError();
     throw error;
   }
-  return data.reference as string;
+  return {
+    id: data.id as string,
+    reference: data.reference as string,
+    holdExpiresAt: data.hold_expires_at as string,
+  };
+}
+
+export async function createPaymentIntent(
+  bookingId: string,
+): Promise<{ clientKey: string; paymentIntentId: string }> {
+  const db = requireDb();
+  const { data, error } = await db.functions.invoke('create-payment-intent', {
+    body: { bookingId },
+  });
+  if (error) throw error;
+  return data as { clientKey: string; paymentIntentId: string };
+}
+
+/** Lightweight poll target for `reserve/processing.tsx` — status only. */
+export async function fetchHoldStatus(bookingId: string): Promise<string> {
+  const db = requireDb();
+  const { data, error } = await db
+    .from('bookings')
+    .select('status')
+    .eq('id', bookingId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.status as string | undefined) ?? 'gone';
 }
 
 export async function cancelBooking(reference: string): Promise<void> {

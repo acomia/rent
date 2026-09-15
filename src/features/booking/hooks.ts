@@ -9,11 +9,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   cancelBooking,
-  createBooking,
+  createHold,
+  createPaymentIntent,
   fetchBooking,
   fetchBookings,
   fetchDayStates,
-  type CreateBookingInput,
+  fetchHoldStatus,
+  type CreateHoldInput,
 } from './api';
 import { toKey } from './dates';
 
@@ -63,14 +65,34 @@ export function useBookingByRef(reference: string | undefined) {
   });
 }
 
-export function useCreateBooking() {
+export function useCreateHold() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreateBookingInput) => createBooking(input),
+    mutationFn: (input: CreateHoldInput) => createHold(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: bookingKeys.all });
       qc.invalidateQueries({ queryKey: ['bookings', 'days'] });
     },
+  });
+}
+
+export function useCreatePaymentIntent() {
+  return useMutation({
+    mutationFn: (bookingId: string) => createPaymentIntent(bookingId),
+  });
+}
+
+/** Polls a hold's status while waiting for the webhook to advance it. */
+export function useHoldStatus(
+  bookingId: string | null,
+  opts: { enabled: boolean },
+) {
+  return useQuery({
+    queryKey: ['bookings', 'hold-status', bookingId ?? ''],
+    queryFn: () => fetchHoldStatus(bookingId as string),
+    enabled: opts.enabled && Boolean(bookingId),
+    refetchInterval: (query) => (query.state.data === 'hold' ? 2000 : false),
+    staleTime: 0,
   });
 }
 

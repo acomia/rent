@@ -36,6 +36,11 @@ type BookingContextValue = {
   setFulfillment: (f: FulfillmentType) => void;
   setFitting: (iso: string | null) => void;
   setSize: (size: string | null) => void;
+  setHold: (input: {
+    bookingId: string;
+    reference: string;
+    holdExpiresAt: string;
+  }) => void;
   clearDraft: () => void;
 };
 
@@ -60,6 +65,9 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       // decides which days the calendar may offer, so it must be there before
       // the dates screen's first availability fetch.
       size: item.size ?? null,
+      bookingId: null,
+      reference: null,
+      holdExpiresAt: null,
     });
   }, []);
 
@@ -79,6 +87,22 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setDraft((d) => (d ? { ...d, size } : d));
   }, []);
 
+  const setHold = useCallback(
+    (hold: { bookingId: string; reference: string; holdExpiresAt: string }) => {
+      setDraft((d) =>
+        d
+          ? {
+              ...d,
+              bookingId: hold.bookingId,
+              reference: hold.reference,
+              holdExpiresAt: hold.holdExpiresAt,
+            }
+          : d,
+      );
+    },
+    [],
+  );
+
   const clearDraft = useCallback(() => setDraft(null), []);
 
   const value = useMemo(
@@ -89,6 +113,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       setFulfillment,
       setFitting,
       setSize,
+      setHold,
       clearDraft,
     }),
     [
@@ -98,6 +123,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       setFulfillment,
       setFitting,
       setSize,
+      setHold,
       clearDraft,
     ],
   );
