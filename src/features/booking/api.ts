@@ -14,11 +14,17 @@
  *     double booking. A rejected insert here is expected, not exceptional.
  */
 
-import { requireDb, supabase } from '@/lib/supabase';
+import { invokeFunction, requireDb, supabase } from '@/lib/supabase';
 import { dayState as localDayState, today } from './availability';
 import { addDays, daysBetween, fromKey, toKey, type DayKey } from './dates';
 import { quote } from './pricing';
-import type { Booking, BookingStatus, FulfillmentType } from './types';
+import type {
+  Booking,
+  BookingStatus,
+  FulfillmentType,
+  PaymentRecord,
+  PaymentState,
+} from './types';
 
 /** Postgres exclusion-constraint violation — the dates were taken first. */
 const OVERLAP_CODE = '23P01';
@@ -90,7 +96,8 @@ const BOOKING_SELECT = `
   id, reference, item_id, unit_id, pickup_date, return_date,
   cleaning_buffer_days, status, fulfillment_type, fitting_at, fitting_status,
   created_at,
-  items ( name, photos, rental_fee_per_day, deposit )
+  items ( name, photos, rental_fee_per_day, deposit ),
+  payments ( type, status, created_at )
 `;
 
 type BookingRow = {
@@ -111,7 +118,15 @@ type BookingRow = {
     rental_fee_per_day: number;
     deposit: number;
   } | null;
+  payments: { type: string; status: string; created_at: string }[];
 };
+
+/** Payment states that mean money actually moved, as opposed to never charged. */
+const DEPOSIT_WAS_CHARGED = new Set<PaymentRecord['status']>([
+  'paid',
+  'refunded',
+  'forfeited',
+]);
 
 /**
  * The database tracks the shop's full lifecycle; the customer's screens show a
@@ -137,6 +152,28 @@ function mapBooking(row: BookingRow): Booking {
   const deposit = Number(row.items?.deposit ?? 0);
   const status = STATUS_FROM_DB[row.status] ?? 'pending';
 
+  // A booking can carry more than one 'deposit' payment row over its life (a
+  // failed attempt followed by a retried, successful one — see
+  // create-payment-intent's idempotent-reuse branch), and the nested embed's
+  // row order is not guaranteed to be creation order. Sort by created_at so a
+  // stale 'failed' attempt never shadows a since-succeeded 'paid' one — same
+  // reasoning as `mapAdminBooking` in `features/admin/bookings-api.ts`.
+  const depositPayment = [...(row.payments ?? [])]
+    .filter((p) => p.type === 'deposit')
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0];
+  const depositStatus = depositPayment?.status as
+    PaymentRecord['status'] | undefined;
+  const balancePaid = row.payments?.some(
+    (p) => p.type === 'balance' && p.status === 'paid',
+  );
+
+  let payment: PaymentState;
+  if (depositStatus === 'refunded') payment = 'refunded';
+  else if (depositStatus === 'forfeited') payment = 'forfeited';
+  else if (balancePaid) payment = 'settled';
+  else if (depositStatus === 'paid') payment = 'deposit_paid';
+  else payment = 'unpaid';
+
   return {
     ref: row.reference,
     itemId: row.item_id,
@@ -148,13 +185,10 @@ function mapBooking(row: BookingRow): Booking {
     fulfillment: row.fulfillment_type as FulfillmentType,
     fittingAt: row.fitting_at,
     status,
-    // Payment state is NOT derivable from booking status — they are orthogonal.
-    // Until `payments` lands in Phase 5 there is nothing to read, so this is a
-    // placeholder: a booking the shop has approved has, in practice, paid its
-    // deposit. Replace with a join on `payments`, do not extend this guess.
-    payment: status === 'pending' ? 'unpaid' : 'deposit_paid',
+    payment,
     quote: quote({ pricePerDay, deposit, days }),
-    paidOnline: status === 'pending' ? 0 : deposit,
+    paidOnline:
+      depositStatus && DEPOSIT_WAS_CHARGED.has(depositStatus) ? deposit : 0,
   };
 }
 
@@ -182,7 +216,7 @@ export async function fetchBooking(reference: string): Promise<Booking | null> {
 
 // --- Writing -----------------------------------------------------------------
 
-export type CreateBookingInput = {
+export type CreateHoldInput = {
   itemId: string;
   pickup: DayKey;
   ret: DayKey;
@@ -191,17 +225,16 @@ export type CreateBookingInput = {
   size?: string | null;
 };
 
+const HOLD_MINUTES = 15;
+
 /**
- * Reserves the dates.
- *
- * Inserted as 'pending' (awaiting the shop's approval), NOT as a paid booking:
- * only the PayMongo webhook may mark a deposit paid, and RLS deliberately gives
- * the client no path to self-approve. When Phase 5 lands this becomes a 'hold'
- * insert here plus a webhook that advances it — the screens do not change.
+ * Reserves the dates as a checkout hold, NOT a paid booking. Payment happens
+ * next (`createPaymentIntent`); only the PayMongo webhook may advance this
+ * past `hold` (see `reserve/processing.tsx`).
  */
-export async function createBooking(
-  input: CreateBookingInput,
-): Promise<string> {
+export async function createHold(
+  input: CreateHoldInput,
+): Promise<{ id: string; reference: string; holdExpiresAt: string }> {
   const db = requireDb();
 
   const { data: userData, error: userError } = await db.auth.getUser();
@@ -218,6 +251,10 @@ export async function createBooking(
   if (pickError) throw pickError;
   if (!unitId) throw new SlotTakenError();
 
+  const holdExpiresAt = new Date(
+    Date.now() + HOLD_MINUTES * 60_000,
+  ).toISOString();
+
   const { data, error } = await db
     .from('bookings')
     .insert({
@@ -226,28 +263,99 @@ export async function createBooking(
       unit_id: unitId as string,
       pickup_date: input.pickup,
       return_date: input.ret,
-      status: 'pending',
+      status: 'hold',
+      hold_expires_at: holdExpiresAt,
       fulfillment_type: input.fulfillment,
       fitting_at: input.fittingAt,
       fitting_status: input.fittingAt ? 'requested' : null,
     })
-    .select('reference')
+    .select('id, reference, hold_expires_at')
     .single();
 
-  // Another customer won the same unit between pick and insert. The constraint
-  // is the arbiter, so this path is expected under load, not exceptional.
   if (error) {
     if (error.code === OVERLAP_CODE) throw new SlotTakenError();
     throw error;
   }
-  return data.reference as string;
+  return {
+    id: data.id as string,
+    reference: data.reference as string,
+    holdExpiresAt: data.hold_expires_at as string,
+  };
+}
+
+export async function createPaymentIntent(
+  bookingId: string,
+): Promise<{ clientKey: string; paymentIntentId: string }> {
+  return invokeFunction('create-payment-intent', { body: { bookingId } });
+}
+
+/** Lightweight poll target for `reserve/processing.tsx` — status only. */
+export async function fetchHoldStatus(bookingId: string): Promise<string> {
+  const db = requireDb();
+  const { data, error } = await db
+    .from('bookings')
+    .select('status')
+    .eq('id', bookingId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return 'gone';
+  if (data.status !== 'hold') return data.status;
+
+  // Still a hold — check whether the most recent deposit attempt failed, so
+  // the customer sees "try again" promptly instead of waiting out the poll
+  // timeout. The webhook deliberately leaves the booking at 'hold' on a
+  // failed payment so the customer can retry before the countdown runs out.
+  const { data: payment, error: paymentError } = await db
+    .from('payments')
+    .select('status')
+    .eq('booking_id', bookingId)
+    .eq('type', 'deposit')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (paymentError) throw paymentError;
+  return payment?.status === 'failed' ? 'failed' : 'hold';
 }
 
 export async function cancelBooking(reference: string): Promise<void> {
   const db = requireDb();
+  // Every `hold` row has a non-null `hold_expires_at` by construction, so
+  // leaving it set while flipping status away from 'hold' violates
+  // `bookings_hold_has_expiry` — same fix already applied in
+  // `paymongo-webhook` and `admin-refund-booking`.
   const { error } = await db
     .from('bookings')
-    .update({ status: 'cancelled' })
+    .update({ status: 'cancelled', hold_expires_at: null })
     .eq('reference', reference);
   if (error) throw error;
+}
+
+// --- Payments (Phase 5) -------------------------------------------------------
+
+export async function fetchPayments(
+  reference: string,
+): Promise<PaymentRecord[]> {
+  if (!supabase) return [];
+  const { data: booking, error: bookingError } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('reference', reference)
+    .maybeSingle();
+  if (bookingError) throw bookingError;
+  if (!booking) return [];
+
+  const { data, error } = await supabase
+    .from('payments')
+    .select('type, amount, status, paid_at, refunded_at')
+    .eq('booking_id', booking.id)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    type: row.type as PaymentRecord['type'],
+    amount: Number(row.amount),
+    status: row.status as PaymentRecord['status'],
+    paidAt: row.paid_at as string | null,
+    refundedAt: row.refunded_at as string | null,
+  }));
 }

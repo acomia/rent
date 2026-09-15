@@ -52,6 +52,14 @@ export type Booking = {
   paidOnline: number;
 };
 
+export type PaymentRecord = {
+  type: 'deposit' | 'balance' | 'penalty';
+  amount: number;
+  status: 'processing' | 'paid' | 'failed' | 'refunded' | 'forfeited';
+  paidAt: string | null;
+  refundedAt: string | null;
+};
+
 /** The in-progress booking, filled in screen by screen. */
 export type BookingDraft = {
   itemId: string;
@@ -66,4 +74,8 @@ export type BookingDraft = {
   fittingAt: string | null;
   /** Chosen size, narrowing which physical unit the shop assigns. */
   size: string | null;
+  /** Set once the checkout hold is created (Phase 5) — null until then. */
+  bookingId: string | null;
+  reference: string | null;
+  holdExpiresAt: string | null;
 };

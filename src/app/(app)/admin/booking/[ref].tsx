@@ -12,9 +12,11 @@ import { MUTED, PLACEHOLDER } from '@/components/catalog/catalog-style';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { AdminAction } from '@/features/admin/bookings-api';
-import { actionsFor } from '@/features/admin/bookings-api';
+import { actionsFor, isOut, owesBalance } from '@/features/admin/bookings-api';
 import {
   useAdminBooking,
+  useRecordBalancePaid,
+  useRecordPenalty,
   useUpdateBookingStatus,
   useUpdateFittingStatus,
 } from '@/features/admin/bookings-hooks';
@@ -27,6 +29,14 @@ const ACTION_LABEL: Record<AdminAction, string> = {
   reject: 'Reject',
   cancel: 'Cancel booking',
   mark_picked_up: 'Mark as picked up',
+};
+
+const DEPOSIT_STATUS_LABEL: Record<string, string> = {
+  processing: 'Processing',
+  paid: 'Paid',
+  failed: 'Failed',
+  refunded: 'Refunded',
+  forfeited: 'Forfeited',
 };
 
 /**
@@ -44,10 +54,17 @@ export default function AdminBookingDetail() {
   const { data: booking, isLoading } = useAdminBooking(ref);
   const update = useUpdateBookingStatus();
   const fitting = useUpdateFittingStatus();
+  const recordBalance = useRecordBalancePaid();
+  const recordPenalty = useRecordPenalty();
   const today = todayFn();
 
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
+  const [recordingBalance, setRecordingBalance] = useState(false);
+  const [balanceAmount, setBalanceAmount] = useState('');
+  const [recordingPenalty, setRecordingPenalty] = useState(false);
+  const [penaltyAmount, setPenaltyAmount] = useState('');
+  const [penaltyNote, setPenaltyNote] = useState('');
 
   if (isLoading || !booking) {
     return (
@@ -66,6 +83,21 @@ export default function AdminBookingDetail() {
 
   const s = ADMIN_STATUS[booking.status];
   const actions = actionsFor(booking.status);
+  const showRecordBalance = owesBalance(booking) && !booking.balancePaid;
+  const showAddPenalty = owesBalance(booking) || isOut(booking);
+  const anyPanelOpen = rejecting || recordingBalance || recordingPenalty;
+
+  const parsedBalance = Number(balanceAmount);
+  const balanceValid =
+    balanceAmount.trim().length > 0 &&
+    Number.isFinite(parsedBalance) &&
+    parsedBalance > 0;
+
+  const parsedPenalty = Number(penaltyAmount);
+  const penaltyValid =
+    penaltyAmount.trim().length > 0 &&
+    Number.isFinite(parsedPenalty) &&
+    parsedPenalty > 0;
 
   function run(action: AdminAction) {
     if (action === 'reject') {
@@ -103,6 +135,45 @@ export default function AdminBookingDetail() {
         onSuccess: () => {
           setRejecting(false);
           setReason('');
+        },
+        onError: (e) =>
+          Alert.alert(
+            'That didn’t go through',
+            e instanceof Error ? e.message : 'Please try again.',
+          ),
+      },
+    );
+  }
+
+  function submitBalance() {
+    recordBalance.mutate(
+      { reference: booking!.ref, amount: parsedBalance },
+      {
+        onSuccess: () => {
+          setRecordingBalance(false);
+          setBalanceAmount('');
+        },
+        onError: (e) =>
+          Alert.alert(
+            'That didn’t go through',
+            e instanceof Error ? e.message : 'Please try again.',
+          ),
+      },
+    );
+  }
+
+  function submitPenalty() {
+    recordPenalty.mutate(
+      {
+        reference: booking!.ref,
+        amount: parsedPenalty,
+        note: penaltyNote.trim(),
+      },
+      {
+        onSuccess: () => {
+          setRecordingPenalty(false);
+          setPenaltyAmount('');
+          setPenaltyNote('');
         },
         onError: (e) =>
           Alert.alert(
@@ -192,6 +263,15 @@ export default function AdminBookingDetail() {
             label="Deposit (refundable)"
             value={formatPeso(booking.deposit)}
           />
+          {booking.depositStatus ? (
+            <DetailRow
+              label="Deposit status"
+              value={
+                DEPOSIT_STATUS_LABEL[booking.depositStatus] ??
+                booking.depositStatus
+              }
+            />
+          ) : null}
         </View>
 
         {booking.fittingAt ? (
@@ -283,9 +363,100 @@ export default function AdminBookingDetail() {
             </View>
           </View>
         ) : null}
+
+        {recordingBalance ? (
+          <View className="gap-3 rounded-2xl border-hairline bg-surface p-4">
+            <Text className="font-sans-medium text-sm text-ink">
+              Record balance paid
+            </Text>
+            <Text className="font-sans text-xs text-muted">
+              Enter what the customer paid at the counter.
+            </Text>
+            <TextInput
+              value={balanceAmount}
+              onChangeText={setBalanceAmount}
+              placeholder="0"
+              placeholderTextColor={PLACEHOLDER}
+              keyboardType="numeric"
+              className="rounded-2xl border-hairline bg-canvas-subtle p-3 font-sans text-base text-ink"
+            />
+            <View className="flex-row gap-2">
+              <View className="flex-1">
+                <Button
+                  label="Record payment"
+                  variant="primary"
+                  disabled={!balanceValid}
+                  loading={recordBalance.isPending}
+                  onPress={submitBalance}
+                />
+              </View>
+              <View className="flex-1">
+                <Button
+                  label="Never mind"
+                  variant="outline"
+                  onPress={() => {
+                    setRecordingBalance(false);
+                    setBalanceAmount('');
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+        ) : null}
+
+        {recordingPenalty ? (
+          <View className="gap-3 rounded-2xl border-hairline bg-surface p-4">
+            <Text className="font-sans-medium text-sm text-ink">
+              Add penalty
+            </Text>
+            <Text className="font-sans text-xs text-muted">
+              For damage, a late return, or anything else charged against the
+              deposit.
+            </Text>
+            <TextInput
+              value={penaltyAmount}
+              onChangeText={setPenaltyAmount}
+              placeholder="0"
+              placeholderTextColor={PLACEHOLDER}
+              keyboardType="numeric"
+              className="rounded-2xl border-hairline bg-canvas-subtle p-3 font-sans text-base text-ink"
+            />
+            <TextInput
+              value={penaltyNote}
+              onChangeText={setPenaltyNote}
+              placeholder="What's this for?"
+              placeholderTextColor={PLACEHOLDER}
+              multiline
+              className="min-h-[88px] rounded-2xl border-hairline bg-canvas-subtle p-3 font-sans text-base text-ink"
+            />
+            <View className="flex-row gap-2">
+              <View className="flex-1">
+                <Button
+                  label="Add penalty"
+                  variant="primary"
+                  disabled={!penaltyValid}
+                  loading={recordPenalty.isPending}
+                  onPress={submitPenalty}
+                />
+              </View>
+              <View className="flex-1">
+                <Button
+                  label="Never mind"
+                  variant="outline"
+                  onPress={() => {
+                    setRecordingPenalty(false);
+                    setPenaltyAmount('');
+                    setPenaltyNote('');
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
 
-      {actions.length > 0 && !rejecting ? (
+      {(actions.length > 0 || showRecordBalance || showAddPenalty) &&
+      !anyPanelOpen ? (
         <View
           className="gap-3 border-t-hairline px-5 pt-4"
           style={{ paddingBottom: insets.bottom + 12 }}
@@ -303,6 +474,23 @@ export default function AdminBookingDetail() {
               onPress={() => run(a)}
             />
           ))}
+          {showRecordBalance ? (
+            <Button
+              label="Record balance paid"
+              variant="outline"
+              onPress={() => {
+                setBalanceAmount(String(booking.rentalFee));
+                setRecordingBalance(true);
+              }}
+            />
+          ) : null}
+          {showAddPenalty ? (
+            <Button
+              label="Add penalty"
+              variant="outline"
+              onPress={() => setRecordingPenalty(true)}
+            />
+          ) : null}
         </View>
       ) : null}
     </View>

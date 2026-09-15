@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BookingCard } from '@/components/booking/booking-card';
@@ -10,35 +10,80 @@ import { BRONZE } from '@/components/catalog/catalog-style';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/features/booking/booking-context';
 import { daysBetween, fromKey } from '@/features/booking/dates';
-
-const HOLD_SECONDS = 15 * 60;
+import { useCreateHold } from '@/features/booking/hooks';
 
 /**
  * Screen 13 — the slot hold.
  *
- * A pending hold expires so a slot is not taken twice while someone heads to
- * payment (implementation-plan Phase 4). The expired state offers to re-check
- * the dates and never blames the customer.
+ * A real `hold` row (implementation-plan Phase 5), not a client-side timer:
+ * the countdown is derived from the server's `hold_expires_at`, since only
+ * the DB's clock is the one `expire_stale_holds()` actually checks.
  */
 export default function Hold() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { draft } = useBooking();
-  const [left, setLeft] = useState(HOLD_SECONDS);
+  const { draft, setHold } = useBooking();
+  const create = useCreateHold();
+  const started = useRef(false);
+  const [left, setLeft] = useState<number | null>(null);
 
   useEffect(() => {
-    const t = setInterval(() => setLeft((s) => (s > 0 ? s - 1 : 0)), 1000);
+    if (started.current || !draft?.pickup || !draft.ret || draft.bookingId)
+      return;
+    started.current = true;
+    create.mutate(
+      {
+        itemId: draft.itemId,
+        pickup: draft.pickup,
+        ret: draft.ret,
+        fulfillment: draft.fulfillment ?? 'pickup',
+        fittingAt: draft.fittingAt,
+        size: draft.size,
+      },
+      {
+        onSuccess: (hold) =>
+          setHold({
+            bookingId: hold.id,
+            reference: hold.reference,
+            holdExpiresAt: hold.holdExpiresAt,
+          }),
+        onError: (e) =>
+          Alert.alert(
+            'Those dates just got taken',
+            e instanceof Error ? e.message : 'Please try again.',
+            [
+              {
+                text: 'OK',
+                onPress: () => router.replace('/(app)/reserve/dates'),
+              },
+            ],
+          ),
+      },
+    );
+  }, [draft, create, router, setHold]);
+
+  useEffect(() => {
+    if (!draft?.holdExpiresAt) return;
+    const tick = () => {
+      const ms = new Date(draft.holdExpiresAt as string).getTime() - Date.now();
+      setLeft(Math.max(0, Math.floor(ms / 1000)));
+    };
+    tick();
+    const t = setInterval(tick, 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [draft?.holdExpiresAt]);
 
   if (!draft?.pickup || !draft.ret) {
     return <NoDraft />;
   }
 
   const days = daysBetween(fromKey(draft.pickup), fromKey(draft.ret)) + 1;
+  const waiting = left === null;
   const expired = left === 0;
-  const mm = `${Math.floor(left / 60)}`.padStart(2, '0');
-  const ss = `${left % 60}`.padStart(2, '0');
+  const mm = waiting
+    ? '--'
+    : `${Math.floor((left as number) / 60)}`.padStart(2, '0');
+  const ss = waiting ? '--' : `${(left as number) % 60}`.padStart(2, '0');
 
   return (
     <View className="flex-1 bg-canvas">
@@ -92,6 +137,8 @@ export default function Hold() {
       >
         <Button
           label={expired ? 'Check dates again' : 'Pay now'}
+          disabled={waiting}
+          loading={create.isPending}
           onPress={() =>
             expired
               ? router.replace('/(app)/reserve/dates')

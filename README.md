@@ -13,7 +13,7 @@ React Native + Expo (Expo Router, TypeScript) · Supabase (Postgres, Auth,
 Storage, Edge Functions) · NativeWind · TanStack Query (server state) + React
 context (client state) · MMKV for the persisted session · PayMongo · Resend.
 
-Payments and email are planned, not wired — see Phase 5/6 in the
+Payments are wired (Phase 5). Email is planned — see Phase 6 in the
 implementation plan.
 
 ## Getting started
@@ -150,6 +150,64 @@ schema only — no dashboard configuration is needed:
 There is no admin UI for the `0016` content yet, so edit those three tables in
 the SQL editor for now. Announcements are filtered by RLS on `is_active` plus a
 `starts_at`/`ends_at` window, so a banner can be scheduled instead of deleted.
+
+### Backend setup (Phase 5 — Payments)
+
+Payment processing requires PayMongo integration. This is a one-time setup:
+
+1. **Create a PayMongo account** (prerequisite — not set up by `pnpm install`).
+   Ensure your account has an "Individual" business type and test-mode API keys
+   enabled. This project's account is already configured with test keys.
+
+2. **Find your test API keys** in the PayMongo dashboard:
+   - Go to **Settings → Developers**.
+   - Copy the test **Public Key** (starts with `pk_test_`) and test **Secret Key**
+     (starts with `sk_test_`).
+
+Before the next step, authenticate the Supabase CLI. The `supabase secrets set`
+command requires authentication:
+
+```bash
+supabase login
+```
+
+This opens a browser to log into your Supabase account — it needs a real
+interactive terminal (not a non-interactive/scripted session). If you'd rather
+not use the browser flow, generate a personal access token at
+https://supabase.com/dashboard/account/tokens and run
+`supabase login --token <token>` instead.
+
+3. **Set edge function secrets** in Supabase. These secrets power the webhook and
+   payment-processing edge function:
+
+   ```bash
+   supabase secrets set \
+     PAYMONGO_SECRET_KEY=sk_test_xxx \
+     PAYMONGO_WEBHOOK_SECRET=whsk_xxx \
+     --project-ref <your-project-ref>
+   ```
+
+   To find your project ref, go to Supabase → Project Settings → General → Project
+   Ref.
+
+4. **Register the webhook** in PayMongo:
+   - In PayMongo, go to **Settings → Developers → Webhooks**.
+   - Add a new webhook endpoint:
+     - URL: `https://<project-ref>.supabase.co/functions/v1/paymongo-webhook`
+     - Events: Select `payment.paid` and `payment.failed`.
+   - Save the webhook. PayMongo will generate a **Webhook Secret** — this is the
+     `PAYMONGO_WEBHOOK_SECRET` value you set above. _Register the webhook URL
+     first_ (so the function is live), _then_ copy the secret from PayMongo and
+     set it.
+
+5. **Add the public key to `.env`** — already documented in [`.env.example`](./.env.example):
+
+   ```
+   EXPO_PUBLIC_PAYMONGO_PUBLIC_KEY=pk_test_xxx
+   ```
+
+   The public key is safe to embed (it is the whole point of a public key); the
+   secret key stays in edge-function secrets.
 
 ## Scripts
 

@@ -63,11 +63,18 @@ export function StatusBadge({
  * `components/admin/booking-row.tsx` — deliberately separate, because the two
  * audiences see different granularity.
  */
-export const CUSTOMER_STATUS: Record<BookingStatus, Status> = {
-  pending: 'pending',
-  confirmed: 'confirmed',
-  outnow: 'outnow',
-  returned: 'cleaning',
-  completed: 'settled',
-  cancelled: 'settled',
+export const CUSTOMER_STATUS: Record<
+  BookingStatus,
+  { tone: Status; label?: string }
+> = {
+  pending: { tone: 'pending' },
+  confirmed: { tone: 'confirmed' },
+  outnow: { tone: 'outnow' },
+  returned: { tone: 'cleaning' },
+  completed: { tone: 'settled' },
+  // Same neutral "past" tone as completed — cancelled and completed both
+  // read as closed-out at a glance — but the word must say what actually
+  // happened, so it can't fall back to the tone's default "Completed" label
+  // (see ADMIN_STATUS in components/admin/booking-row.tsx for the same fix).
+  cancelled: { tone: 'settled', label: 'Cancelled' },
 };

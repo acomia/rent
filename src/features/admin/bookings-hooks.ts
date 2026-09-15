@@ -17,6 +17,8 @@ import {
   fetchAdminBooking,
   fetchAdminBookings,
   markReturned,
+  recordBalancePaid,
+  recordPenalty,
   updateBookingStatus,
   updateFittingStatus,
 } from './bookings-api';
@@ -71,6 +73,23 @@ export function useUpdateFittingStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: updateFittingStatus,
+    onSuccess: () => invalidateBookings(qc),
+  });
+}
+
+export function useRecordBalancePaid() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { reference: string; amount: number }) =>
+      recordBalancePaid(input.reference, input.amount),
+    onSuccess: () => invalidateBookings(qc),
+  });
+}
+
+export function useRecordPenalty() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: recordPenalty,
     onSuccess: () => invalidateBookings(qc),
   });
 }

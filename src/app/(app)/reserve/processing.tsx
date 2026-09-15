@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,60 +8,63 @@ import { FlowStepper } from '@/components/booking/flow-stepper';
 import { BRONZE, OVERDUE } from '@/components/catalog/catalog-style';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/features/booking/booking-context';
-import { useCreateBooking } from '@/features/booking/hooks';
+import { useHoldStatus } from '@/features/booking/hooks';
 
 const STEPS = ['Connecting', 'Processing', 'Finalizing'];
+const TIMEOUT_MS = 45_000;
 
 /**
- * Screen 15 — the reservation is written here.
+ * Screen 15 — waits for `paymongo-webhook` to advance the hold.
  *
- * This is where the booking is created, not on the success screen: it is the
- * moment payment completes, and in Phase 5 it becomes the PayMongo webhook that
- * marks the deposit paid. Doing it here also means a failure — someone else took
- * the slot a second earlier — surfaces before the customer is told they're done.
+ * This screen does NOT write the booking — it already exists as a `hold`
+ * (Phase 4/5). Only the webhook may move it off `hold`, so this polls rather
+ * than assumes: a slow webhook is not the same as a failed payment.
  */
 export default function Processing() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { draft, clearDraft } = useBooking();
-  const create = useCreateBooking();
   const [step, setStep] = useState(0);
-  const started = useRef(false);
+  const [timedOut, setTimedOut] = useState(false);
+
+  const bookingId = draft?.bookingId ?? null;
+  const status = useHoldStatus(bookingId, { enabled: Boolean(bookingId) });
 
   useEffect(() => {
     const a = setTimeout(() => setStep(1), 900);
     const b = setTimeout(() => setStep(2), 1800);
+    const timeout = setTimeout(() => setTimedOut(true), TIMEOUT_MS);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
+      clearTimeout(timeout);
     };
   }, []);
 
   useEffect(() => {
-    if (started.current || !draft?.pickup || !draft.ret) return;
-    started.current = true;
-    create.mutate(
-      {
-        itemId: draft.itemId,
-        pickup: draft.pickup,
-        ret: draft.ret,
-        fulfillment: draft.fulfillment ?? 'pickup',
-        fittingAt: draft.fittingAt,
-        size: draft.size,
-      },
-      {
-        onSuccess: (reference) => {
-          clearDraft();
-          router.replace({
-            pathname: '/(app)/reserve/success',
-            params: { ref: reference },
-          });
-        },
-      },
-    );
-  }, [draft, create, router, clearDraft]);
+    if (status.data === 'pending' && draft?.reference) {
+      const ref = draft.reference;
+      clearDraft();
+      router.replace({ pathname: '/(app)/reserve/success', params: { ref } });
+    }
+  }, [status.data, draft?.reference, clearDraft, router]);
 
-  if (create.isError) {
+  if (!bookingId) {
+    return (
+      <View className="flex-1 bg-canvas">
+        <View className="flex-1 items-center justify-center px-8">
+          <Text className="text-center font-sans text-base text-muted">
+            Nothing to confirm — start a reservation first.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  const failed =
+    (status.data === 'failed' || status.data === 'gone') && !status.isFetching;
+
+  if (failed) {
     return (
       <View className="flex-1 bg-canvas">
         <View className="flex-1 items-center justify-center gap-5 px-8">
@@ -69,12 +72,11 @@ export default function Processing() {
             <Feather name="alert-circle" size={28} color={OVERDUE} />
           </View>
           <Text className="text-center font-display-bold text-2xl text-ink">
-            We couldn&apos;t reserve these dates
+            Your payment didn&apos;t go through
           </Text>
           <Text className="text-center font-sans text-base leading-6 text-muted">
-            {create.error instanceof Error
-              ? create.error.message
-              : 'Something went wrong. Please try again.'}
+            Nothing was charged. You can try a different payment method — your
+            dates are still held.
           </Text>
         </View>
         <View
@@ -82,10 +84,33 @@ export default function Processing() {
           style={{ paddingBottom: insets.bottom + 12 }}
         >
           <Button
-            label="Pick different dates"
-            onPress={() => router.replace('/(app)/reserve/dates')}
+            label="Try again"
+            onPress={() => router.replace('/(app)/reserve/payment')}
           />
         </View>
+      </View>
+    );
+  }
+
+  if (timedOut) {
+    return (
+      <View className="flex-1 items-center justify-center gap-7 bg-canvas px-8">
+        <View className="h-20 w-20 items-center justify-center rounded-full bg-bronze-soft">
+          <Feather name="clock" size={30} color={BRONZE} />
+        </View>
+        <View className="gap-2">
+          <Text className="text-center font-display-bold text-2xl text-ink">
+            Still confirming your payment
+          </Text>
+          <Text className="text-center font-sans text-base leading-6 text-muted">
+            This is taking longer than usual. We&apos;ll update your booking as
+            soon as it&apos;s confirmed — check My Bookings shortly.
+          </Text>
+        </View>
+        <Button
+          label="Go to My Bookings"
+          onPress={() => router.replace('/(app)/(tabs)/bookings')}
+        />
       </View>
     );
   }

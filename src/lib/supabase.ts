@@ -1,4 +1,9 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import {
+  createClient,
+  FunctionsHttpError,
+  type FunctionInvokeOptions,
+  type SupabaseClient,
+} from '@supabase/supabase-js';
 import { createMMKV } from 'react-native-mmkv';
 import 'react-native-url-polyfill/auto';
 
@@ -50,6 +55,33 @@ export function requireDb(): SupabaseClient {
     );
   }
   return supabase;
+}
+
+/**
+ * Calls an edge function and returns its parsed body, unwrapping the real
+ * error detail.
+ *
+ * `FunctionsHttpError.message` from the SDK is always the generic "Edge
+ * Function returned a non-2xx status code" — every function here returns a
+ * `{ error: string }` body on failure, but that text only lives on
+ * `error.context` (the raw Response), one `await .json()` away. Without this,
+ * every caller either shows that unhelpful generic string or has to
+ * re-implement the same unwrap.
+ */
+export async function invokeFunction<T>(
+  name: string,
+  options?: FunctionInvokeOptions,
+): Promise<T> {
+  const db = requireDb();
+  const { data, error } = await db.functions.invoke(name, options);
+  if (error) {
+    if (error instanceof FunctionsHttpError) {
+      const body = await error.context.json().catch(() => null);
+      if (body?.error) throw new Error(body.error);
+    }
+    throw error;
+  }
+  return data as T;
 }
 
 /**
