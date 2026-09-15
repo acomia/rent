@@ -31,6 +31,14 @@ const ACTION_LABEL: Record<AdminAction, string> = {
   mark_picked_up: 'Mark as picked up',
 };
 
+const DEPOSIT_STATUS_LABEL: Record<string, string> = {
+  processing: 'Processing',
+  paid: 'Paid',
+  failed: 'Failed',
+  refunded: 'Refunded',
+  forfeited: 'Forfeited',
+};
+
 /**
  * The shop's decision screen for one booking.
  *
@@ -255,6 +263,15 @@ export default function AdminBookingDetail() {
             label="Deposit (refundable)"
             value={formatPeso(booking.deposit)}
           />
+          {booking.depositStatus ? (
+            <DetailRow
+              label="Deposit status"
+              value={
+                DEPOSIT_STATUS_LABEL[booking.depositStatus] ??
+                booking.depositStatus
+              }
+            />
+          ) : null}
         </View>
 
         {booking.fittingAt ? (
