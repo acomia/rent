@@ -29,8 +29,12 @@ Deno.serve(async (req) => {
   }
 
   // Scoped to the caller's own session, so `bookings_select_own_or_admin`
-  // RLS is the only ownership check needed — a customer can only ever read
-  // (and therefore only ever create an intent for) their own hold.
+  // RLS is the only ownership check needed — a customer session can only
+  // ever read (and therefore only ever create an intent for) their own
+  // hold. An admin session can read any booking under the same policy, so
+  // an admin's bearer token can call this for any customer's hold too —
+  // same as everywhere else in this app admin sessions are already fully
+  // trusted.
   const callerClient = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_ANON_KEY')!,
@@ -95,13 +99,27 @@ Deno.serve(async (req) => {
       },
     );
     const json = await res.json();
-    return new Response(
-      JSON.stringify({
-        clientKey: json.data.attributes.client_key,
-        paymentIntentId: existing.paymongo_payment_intent_id,
-      }),
-      { status: 200 },
-    );
+    if (res.ok && json?.data?.attributes?.client_key) {
+      return new Response(
+        JSON.stringify({
+          clientKey: json.data.attributes.client_key,
+          paymentIntentId: existing.paymongo_payment_intent_id,
+        }),
+        { status: 200 },
+      );
+    }
+
+    // The re-fetch failed or came back in an unexpected shape. Leaving the
+    // existing row at 'processing' would permanently wedge this booking —
+    // the unique partial index on one processing deposit per booking blocks
+    // any fresh insert below while it stands. Mark it failed and fall
+    // through to create a brand-new intent instead of erroring out.
+    await serviceClient
+      .from('payments')
+      .update({ status: 'failed' })
+      .eq('booking_id', bookingId)
+      .eq('type', 'deposit')
+      .eq('status', 'processing');
   }
 
   const deposit = Number(
