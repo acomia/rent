@@ -84,12 +84,26 @@ Deno.serve(async (req) => {
       })
       .eq('id', payment.id);
 
-    const { data: advanced } = await db
+    const { data: advanced, error: advanceError } = await db
       .from('bookings')
-      .update({ status: 'pending' })
+      .update({ status: 'pending', hold_expires_at: null })
       .eq('id', payment.booking_id)
       .eq('status', 'hold')
       .select('id');
+
+    if (advanceError) {
+      // A genuine, unexpected failure to advance the booking — distinct from
+      // the legitimate "0 rows because the hold already expired" case below.
+      // Must not fall into the refund branch: that's for a hold that's
+      // really gone, not for a query that errored out.
+      console.error(
+        'paymongo-webhook: failed to advance booking to pending',
+        advanceError,
+      );
+      return new Response(JSON.stringify({ error: advanceError.message }), {
+        status: 500,
+      });
+    }
 
     if (!advanced || advanced.length === 0) {
       // The hold was already swept before this webhook landed — rare, since
