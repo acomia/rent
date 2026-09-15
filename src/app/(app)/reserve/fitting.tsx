@@ -6,8 +6,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlowHeader } from '@/components/booking/flow-header';
 import { MonthCalendar } from '@/components/booking/month-calendar';
 import { Button } from '@/components/ui/button';
+import type { DayStateMap } from '@/features/booking/api';
 import { today as todayFn } from '@/features/booking/availability';
 import { useBooking } from '@/features/booking/booking-context';
+import {
+  daysBetween,
+  FITTING_BUFFER_DAYS,
+  fromKey,
+  monthMatrix,
+  toKey,
+} from '@/features/booking/dates';
 
 const SLOTS = ['10:00 AM', '11:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'];
 
@@ -36,8 +44,31 @@ export default function Fitting() {
 
   const [day, setDay] = useState<Date | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
+  const [cursor, setCursor] = useState(() => ({
+    year: today.getFullYear(),
+    month: today.getMonth(),
+  }));
 
   const selection = useMemo(() => ({ pickup: day, ret: day }), [day]);
+
+  // A fitting only makes sense before the rental is due back, and needs lead
+  // time to schedule — so the visible month is capped at the rental's return
+  // date (if one is already picked) and floored at today + buffer.
+  const states = useMemo<DayStateMap>(() => {
+    const map: DayStateMap = {};
+    const retDate = draft?.ret ? fromKey(draft.ret) : null;
+    for (const row of monthMatrix(cursor.year, cursor.month)) {
+      for (const date of row) {
+        if (!date) continue;
+        const tooSoon = daysBetween(today, date) < FITTING_BUFFER_DAYS;
+        const afterReturn = retDate ? daysBetween(retDate, date) > 0 : false;
+        if (tooSoon || afterReturn) {
+          map[toKey(date)] = 'unavailable';
+        }
+      }
+    }
+    return map;
+  }, [cursor.year, cursor.month, today, draft]);
 
   function onConfirm() {
     if (!day || !slot) return;
@@ -65,11 +96,17 @@ export default function Fitting() {
           <MonthCalendar
             today={today}
             unknownDay="available"
+            states={states}
             selection={selection}
             onChange={(s) => {
               setDay(s.pickup);
               setSlot(null);
             }}
+            onMonthChange={(year, month) =>
+              setCursor((c) =>
+                c.year === year && c.month === month ? c : { year, month },
+              )
+            }
           />
         ) : null}
 

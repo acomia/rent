@@ -228,7 +228,12 @@ export default function ProductDetail() {
           </Text>
         </View>
         <View className="flex-1">
-          <Button label="Check dates" variant="commit" onPress={checkDates} />
+          <Button
+            label="Check dates"
+            variant="commit"
+            disabled={product.sizes.length > 0 && !selectedSize}
+            onPress={checkDates}
+          />
         </View>
       </View>
     </View>

@@ -120,6 +120,15 @@ export function todayManila(): Date {
 }
 
 /**
+ * Same-day and next-day fittings give the shop no lead time to prep — the
+ * earliest bookable fitting slot is this many days out. Shared by the
+ * fulfilment screen (to grey out the option entirely when no day in the
+ * rental window can satisfy it) and the fitting calendar (to disable the
+ * days themselves).
+ */
+export const FITTING_BUFFER_DAYS = 2;
+
+/**
  * The days a returned item is out of circulation. Blocked, but not booked —
  * the distinction the rental band draws, and the window the return flow shows.
  */
