@@ -293,7 +293,10 @@ export default function Home() {
                   >
                     {upcoming.itemName}
                   </Text>
-                  <StatusBadge status={CUSTOMER_STATUS[upcoming.status]} />
+                  <StatusBadge
+                    status={CUSTOMER_STATUS[upcoming.status].tone}
+                    label={CUSTOMER_STATUS[upcoming.status].label}
+                  />
                 </View>
                 <Text className="font-sans text-xs text-muted">
                   {formatRange(fromKey(upcoming.pickup), fromKey(upcoming.ret))}

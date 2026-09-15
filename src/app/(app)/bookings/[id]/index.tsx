@@ -11,12 +11,21 @@ import { Button } from '@/components/ui/button';
 import { CUSTOMER_STATUS, StatusBadge } from '@/components/ui/status-badge';
 import { today as todayFn } from '@/features/booking/availability';
 import { useBookingByRef, useCancelBooking } from '@/features/booking/hooks';
+import type { PaymentState } from '@/features/booking/types';
 import {
   daysBetween,
   formatDate,
   formatTime,
   fromKey,
 } from '@/features/booking/dates';
+
+const PAYMENT_LABEL: Record<PaymentState, string> = {
+  unpaid: 'Unpaid',
+  deposit_paid: 'Deposit paid',
+  settled: 'Settled',
+  refunded: 'Refunded',
+  forfeited: 'Forfeited',
+};
 
 /** Screen 19 — booking detail. */
 export default function BookingDetail() {
@@ -55,8 +64,17 @@ export default function BookingDetail() {
           text: 'Cancel booking',
           style: 'destructive',
           onPress: () => {
-            cancel.mutate(booking!.ref);
-            router.back();
+            cancel.mutate(booking!.ref, {
+              onSuccess: () => router.back(),
+              onError: (e) =>
+                Alert.alert(
+                  'Could not cancel',
+                  e instanceof Error
+                    ? e.message
+                    : ((e as { message?: string })?.message ??
+                        'Please try again.'),
+                ),
+            });
           },
         },
       ],
@@ -76,7 +94,12 @@ export default function BookingDetail() {
           pickup={booking.pickup}
           ret={booking.ret}
           days={days}
-          right={<StatusBadge status={CUSTOMER_STATUS[booking.status]} />}
+          right={
+            <StatusBadge
+              status={CUSTOMER_STATUS[booking.status].tone}
+              label={CUSTOMER_STATUS[booking.status].label}
+            />
+          }
         />
 
         <RentalBand
@@ -109,9 +132,7 @@ export default function BookingDetail() {
           <DisclosureRow
             icon="credit-card"
             label="Payment details"
-            value={
-              booking.payment === 'deposit_paid' ? 'Deposit paid' : 'Settled'
-            }
+            value={PAYMENT_LABEL[booking.payment]}
           />
           <DisclosureRow icon="file-text" label="Cancellation terms" />
           {cancellable ? (

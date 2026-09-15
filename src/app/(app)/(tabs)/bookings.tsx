@@ -134,7 +134,12 @@ export default function Bookings() {
                       pickup={b.pickup}
                       ret={b.ret}
                       days={days}
-                      right={<StatusBadge status={CUSTOMER_STATUS[b.status]} />}
+                      right={
+                        <StatusBadge
+                          status={CUSTOMER_STATUS[b.status].tone}
+                          label={CUSTOMER_STATUS[b.status].label}
+                        />
+                      }
                     />
                     <RentalBand
                       pickup={fromKey(b.pickup)}
