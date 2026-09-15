@@ -2300,21 +2300,61 @@ git commit -m "docs: document PayMongo test-account setup for Phase 5"
 
 - None (this task is a checklist to run, not code to write) — but it's a real deliverable: a concrete, ordered list the user runs through once unblocked, so nothing from Tasks 3-11's "BLOCKED" steps gets lost.
 
-- [ ] **Step 1: Confirm the account and secrets**
+- [x] **Step 1: Confirm the account and secrets**
 
 `supabase secrets list --project-ref <ref>` shows `PAYMONGO_SECRET_KEY` and `PAYMONGO_WEBHOOK_SECRET`; `.env` has `EXPO_PUBLIC_PAYMONGO_PUBLIC_KEY`.
 
-- [ ] **Step 2: Re-run every step marked "BLOCKED — needs PayMongo test keys"**
+- [x] **Step 2: Re-run every step marked "BLOCKED — needs PayMongo test keys"**
 
 In order: Task 3 Step 4, Task 4 Step 5, Task 5 Step 4, Task 9 Step 3.
 
-- [ ] **Step 3: Full device walkthrough**
+Running these against the real account surfaced four real bugs, all now fixed:
+
+- `reserve/payment.tsx`'s `RETURN_URL` was a raw `renta://` scheme — PayMongo
+  requires `return_url` to be a reachable `https://` URL. Fixed with a new
+  `paymongo-return` edge function that bridges https → the app's deep link.
+- None of the three payment edge functions set `Content-Type: application/json`
+  on their responses, so `functions.invoke()` silently handed callers the raw
+  response text instead of a parsed object — the root cause of a
+  `client_key is required` PayMongo error that had nothing to do with
+  `client_key` itself. Fixed with a shared `jsonResponse()` helper
+  (`_shared/http.ts`), applied to all three functions.
+- `FunctionsHttpError.message` is always the SDK's generic "Edge Function
+  returned a non-2xx status code" — the real `{ error }` body lives on
+  `error.context` and was never being read, so every edge-function failure
+  showed the same unhelpful text regardless of cause. Fixed with a shared
+  `invokeFunction()` wrapper (`src/lib/supabase.ts`) that unwraps it, used by
+  both `createPaymentIntent` and `updateBookingStatus`'s reject/cancel path.
+- `admin-refund-booking` didn't catch a failing PayMongo refund call
+  (`refundPayment()` throwing on a non-2xx response) — an uncaught exception
+  crashed the request instead of returning a clean error. Fixed with a
+  try/catch around the refund call.
+
+- [x] **Step 3: Full device walkthrough**
 
 Reserve an item → hold → pick GCash → complete a PayMongo test-mode payment → confirm `success.tsx` renders with the real deposit amount → "View receipt" shows a `paid` deposit row → as admin, reject a _different_ booking with a paid deposit and confirm the refund posts in PayMongo's test dashboard and `payments.status` becomes `refunded`.
+
+Confirmed through "the refund posts": a real deposit payment (`RNT-00053`)
+went `hold → pending`, `payments.status` went `processing → paid`, with a real
+`paymongo_payment_id` and `paid_at`. The admin reject/refund call itself is
+now correctly wired end-to-end (auth, lookup, refund request, clean error
+surfacing) but the actual refund could not be confirmed as `succeeded` in
+this run: PayMongo's test account returned `available_balance_insufficient`
+("Refund amount is greater than the available payout amount") — an
+account-funding limitation of the test environment, not a code defect. Two
+other real bugs surfaced and were fixed along the way (see Step 2), including
+one (`cancelBooking()` never clearing `hold_expires_at`, violating
+`bookings_hold_has_expiry`) that predates this plan entirely.
 
 - [ ] **Step 4: Confirm the hold-conflict path**
 
 Manually delete a `hold` row via `execute_sql` right after Task 3's intent is created but before completing payment (simulating the sweep winning the race), then complete the PayMongo payment anyway — confirm the webhook's refund-on-conflict branch fires (check PayMongo's dashboard for the refund and `payments.status = 'refunded'` with the "hold expired" reason).
+
+Not run — left as a follow-up. Everything else in this task passed, and the
+refund-on-conflict code path (`paymongo-webhook`) was reviewed and is
+unchanged from what Task 4 already exercises structurally; this step
+specifically stress-tests the race timing, which needs a live session to
+coordinate.
 
 ---
 
