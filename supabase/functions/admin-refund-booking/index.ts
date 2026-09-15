@@ -81,14 +81,12 @@ Deno.serve(async (req) => {
       reason: 'others',
       notes: reason,
     });
-    await db
-      .from('payments')
-      .update({
-        status: 'refunded',
-        refunded_at: new Date().toISOString(),
-        refund_reason: reason,
-      })
-      .eq('id', payment.id);
+    // `refundPayment` only throws on a non-2xx HTTP response — a 2xx response
+    // can still carry a business-level `failed`/`declined` refund status. Check
+    // that FIRST: only a genuinely succeeded/pending refund may mark the
+    // payment 'refunded'. Otherwise the money was never actually returned, so
+    // leave the payment's `paid` status alone rather than recording a refund
+    // that didn't happen, and never advance the booking either.
     if (refund.status !== 'succeeded' && refund.status !== 'pending') {
       return new Response(
         JSON.stringify({ error: `Refund did not succeed: ${refund.status}` }),
@@ -97,10 +95,24 @@ Deno.serve(async (req) => {
         },
       );
     }
+    await db
+      .from('payments')
+      .update({
+        status: 'refunded',
+        refunded_at: new Date().toISOString(),
+        refund_reason: reason,
+      })
+      .eq('id', payment.id);
   }
 
+  // Clears any hold timer the same way `paymongo-webhook` (8582070) and the
+  // admin approve path (`bookings-api.ts`) already do: `actionsFor()` allows
+  // 'reject' from a still-`hold` booking, and every `hold` row has a non-null
+  // `hold_expires_at` by construction — leaving it set while flipping status
+  // away from 'hold' would violate `bookings_hold_has_expiry`.
   const patch: Record<string, unknown> = {
     status: action === 'reject' ? 'rejected' : 'cancelled',
+    hold_expires_at: null,
   };
   if (action === 'reject') patch.rejection_reason = reason;
 
