@@ -17,13 +17,27 @@ import { useAuth } from '@/features/auth/auth-context';
 import { useCreatePaymentIntent } from '@/features/booking/hooks';
 import { quoteFromDraft } from '@/features/booking/pricing';
 import { formatPeso } from '@/features/catalog/types';
+import { env } from '@/lib/env';
 import {
   attachPaymentMethod,
   createPaymentMethod,
   type PaymentMethodType,
 } from '@/lib/paymongo';
 
+/**
+ * What `openAuthSessionAsync` watches for to know the gateway is done — must
+ * be the app's own registered scheme, not PayMongo's `return_url` below.
+ */
 const RETURN_URL = 'renta://reserve/payment';
+
+/**
+ * What PayMongo's `return_url` is actually set to. PayMongo rejects a raw
+ * custom scheme here ("return_url format is invalid" — it requires a
+ * reachable https:// URL), so this points at `paymongo-return`, a tiny edge
+ * function that immediately redirects into `RETURN_URL`. The auth session
+ * only closes on that final `renta://` hop, not on this https one.
+ */
+const PAYMONGO_RETURN_URL = `${env.supabaseUrl}/functions/v1/paymongo-return`;
 
 /**
  * `PAYMENT_METHODS` (UI copy) uses ids that predate PayMongo's actual type
@@ -73,7 +87,7 @@ export default function Payment() {
         paymentIntentId: intent.paymentIntentId,
         clientKey: intent.clientKey,
         paymentMethodId: paymentMethod.id,
-        returnUrl: RETURN_URL,
+        returnUrl: PAYMONGO_RETURN_URL,
       });
 
       if (attached.redirectUrl) {
