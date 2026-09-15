@@ -269,7 +269,23 @@ export async function fetchHoldStatus(bookingId: string): Promise<string> {
     .eq('id', bookingId)
     .maybeSingle();
   if (error) throw error;
-  return (data?.status as string | undefined) ?? 'gone';
+  if (!data) return 'gone';
+  if (data.status !== 'hold') return data.status;
+
+  // Still a hold — check whether the most recent deposit attempt failed, so
+  // the customer sees "try again" promptly instead of waiting out the poll
+  // timeout. The webhook deliberately leaves the booking at 'hold' on a
+  // failed payment so the customer can retry before the countdown runs out.
+  const { data: payment, error: paymentError } = await db
+    .from('payments')
+    .select('status')
+    .eq('booking_id', bookingId)
+    .eq('type', 'deposit')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (paymentError) throw paymentError;
+  return payment?.status === 'failed' ? 'failed' : 'hold';
 }
 
 export async function cancelBooking(reference: string): Promise<void> {
