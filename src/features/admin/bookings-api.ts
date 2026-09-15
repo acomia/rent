@@ -13,7 +13,7 @@
 import { daysBetween, fromKey } from '@/features/booking/dates';
 import { quote } from '@/features/booking/pricing';
 import type { FulfillmentType, PaymentRecord } from '@/features/booking/types';
-import { requireDb, supabase } from '@/lib/supabase';
+import { invokeFunction, requireDb, supabase } from '@/lib/supabase';
 
 /**
  * The shop's view of a booking's lifecycle — the full ramp, not the coarser set
@@ -206,14 +206,13 @@ export async function updateBookingStatus(input: {
   // they go through the edge function rather than a direct table update —
   // see docs/superpowers/specs/2026-09-14-phase-5-payments-design.md.
   if (input.action === 'reject' || input.action === 'cancel') {
-    const { error } = await db.functions.invoke('admin-refund-booking', {
+    await invokeFunction('admin-refund-booking', {
       body: {
         reference: input.reference,
         action: input.action,
         reason: input.reason ?? 'Cancelled by the shop.',
       },
     });
-    if (error) throw error;
     return;
   }
 
