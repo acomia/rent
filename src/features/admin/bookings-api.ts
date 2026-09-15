@@ -12,7 +12,7 @@
 
 import { daysBetween, fromKey } from '@/features/booking/dates';
 import { quote } from '@/features/booking/pricing';
-import type { FulfillmentType } from '@/features/booking/types';
+import type { FulfillmentType, PaymentRecord } from '@/features/booking/types';
 import { requireDb, supabase } from '@/lib/supabase';
 
 /**
@@ -50,17 +50,23 @@ export type AdminBooking = {
   rentalFee: number;
   deposit: number;
   createdAt: string;
+  /** Status of the deposit payment, or null if none was ever created. */
+  depositStatus: PaymentRecord['status'] | null;
+  /** Whether the balance owed at pickup has been recorded as paid. */
+  balancePaid: boolean;
 };
 
 const ADMIN_BOOKING_SELECT = `
-  reference, status, pickup_date, return_date, cleaning_buffer_days,
+  id, reference, status, pickup_date, return_date, cleaning_buffer_days,
   fulfillment_type, fitting_at, fitting_status, rejection_reason, created_at,
   customers ( full_name, phone_number ),
   items ( name, photos, rental_fee_per_day, deposit ),
-  item_units ( size )
+  item_units ( size ),
+  payments ( type, status, created_at )
 `;
 
 type Row = {
+  id: string;
   reference: string;
   status: string;
   pickup_date: string;
@@ -79,6 +85,7 @@ type Row = {
     deposit: number;
   } | null;
   item_units: { size: string | null } | null;
+  payments: { type: string; status: string; created_at: string }[];
 };
 
 function mapAdminBooking(row: Row): AdminBooking {
@@ -87,6 +94,19 @@ function mapAdminBooking(row: Row): AdminBooking {
   const pricePerDay = Number(row.items?.rental_fee_per_day ?? 0);
   const deposit = Number(row.items?.deposit ?? 0);
   const q = quote({ pricePerDay, deposit, days });
+
+  // A booking can have more than one 'deposit' payment row over its life (a
+  // failed attempt followed by a retried, successful one — see
+  // create-payment-intent's idempotent-reuse branch) and the nested embed's
+  // row order is not guaranteed to be creation order. Sort by created_at so a
+  // stale 'failed' attempt never shadows a since-succeeded 'paid' one — same
+  // reasoning as `checkHoldStatus` in `features/booking/api.ts`.
+  const deposit_ = [...(row.payments ?? [])]
+    .filter((p) => p.type === 'deposit')
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0];
+  const balancePaid = Boolean(
+    row.payments?.some((p) => p.type === 'balance' && p.status === 'paid'),
+  );
 
   return {
     ref: row.reference,
@@ -109,6 +129,8 @@ function mapAdminBooking(row: Row): AdminBooking {
     rentalFee: q.rentalFee,
     deposit: q.deposit,
     createdAt: row.created_at,
+    depositStatus: (deposit_?.status as PaymentRecord['status']) ?? null,
+    balancePaid,
   };
 }
 
@@ -175,14 +197,28 @@ export async function updateBookingStatus(input: {
   reason?: string;
 }): Promise<void> {
   const db = requireDb();
-  const status = TRANSITIONS[input.action];
 
   if (input.action === 'reject' && !input.reason?.trim()) {
     throw new Error('Add a reason so the customer knows why.');
   }
 
+  // Reject and shop-cancel move money (a paid deposit is refunded first), so
+  // they go through the edge function rather than a direct table update —
+  // see docs/superpowers/specs/2026-09-14-phase-5-payments-design.md.
+  if (input.action === 'reject' || input.action === 'cancel') {
+    const { error } = await db.functions.invoke('admin-refund-booking', {
+      body: {
+        reference: input.reference,
+        action: input.action,
+        reason: input.reason ?? 'Cancelled by the shop.',
+      },
+    });
+    if (error) throw error;
+    return;
+  }
+
+  const status = TRANSITIONS[input.action];
   const patch: Record<string, unknown> = { status };
-  if (input.action === 'reject') patch.rejection_reason = input.reason!.trim();
   // Approving clears any hold: the slot is the shop's decision now, not a timer.
   if (input.action === 'approve') patch.hold_expires_at = null;
 
@@ -190,6 +226,52 @@ export async function updateBookingStatus(input: {
     .from('bookings')
     .update(patch)
     .eq('reference', input.reference);
+  if (error) throw error;
+}
+
+export async function recordBalancePaid(
+  reference: string,
+  amount: number,
+): Promise<void> {
+  const db = requireDb();
+  const { data: booking, error: bookingError } = await db
+    .from('bookings')
+    .select('id')
+    .eq('reference', reference)
+    .single();
+  if (bookingError) throw bookingError;
+
+  const { error } = await db.from('payments').insert({
+    booking_id: booking.id,
+    type: 'balance',
+    amount,
+    status: 'paid',
+    paid_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+export async function recordPenalty(input: {
+  reference: string;
+  amount: number;
+  note: string;
+}): Promise<void> {
+  const db = requireDb();
+  const { data: booking, error: bookingError } = await db
+    .from('bookings')
+    .select('id')
+    .eq('reference', input.reference)
+    .single();
+  if (bookingError) throw bookingError;
+
+  const { error } = await db.from('payments').insert({
+    booking_id: booking.id,
+    type: 'penalty',
+    amount: input.amount,
+    status: 'paid',
+    paid_at: new Date().toISOString(),
+    refund_reason: input.note || null,
+  });
   if (error) throw error;
 }
 
