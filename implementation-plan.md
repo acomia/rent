@@ -15,48 +15,49 @@ Task marks: `[x]` done · `[~]` partially done, with what is missing stated inli
 
 **Done:** Phases 0–3 complete. Phase 3.5 (design system + rebrand to **Renta**) complete.
 **Phase 4 is now complete on both sides** — the customer booking flow, the database, and the admin
-shell (dashboard, booking queue, returns, fittings day view). Phase 3.6 (Home rebuild + Browse tab)
-was added after it and is complete in the app, pending its migration being applied.
+shell (dashboard, booking queue, returns, fittings day view) — including the unit-status
+transitions (`0022`). Phase 3.6 (Home rebuild + Browse tab) is complete in the app and its
+migration (`0016`) is applied. **Phase 5 (payments) is built and merged** — PayMongo
+checkout-hold/payment-intent flow, the webhook, admin refund, and the receipt screen are live;
+Resend email receipts and the hold-conflict race test are the two pieces still open within it.
 
 **Next up, in order:**
 
-1. **Two decisions and one account, before any Phase 5 code.** Open Item #4 (cancellation and
-   refund policy) is the first task in that phase and is already overdue, since Cancel booking
-   ships today with no refund rule. The deposit rule (#2) is unknown, and Phase 5 wires PayMongo to
-   an amount. And the PayMongo test account is still unchecked in Phase 0. None of this is code.
-2. **Phase 5 payments.** This is a _hard_ dependency rather than a nice-to-have: RLS deliberately
-   gives the client no path to mark its own deposit paid, so until the PayMongo webhook exists,
-   bookings can only ever be created as `pending`. See the Phase 5 notes.
-3. **Booking → unit status transitions** (Phase 4) — still only partly driven by booking state:
-   flagging condition on a return sets `item_units.status = 'damaged'`, but nothing moves a unit
-   through rented/cleaning, and the admin item editor is still the only other writer.
-4. **Finish the Android pass.** The first Android run happened (Pixel 7 emulator) and Home is
+1. **Phase 5 payments is now built and merged.** PayMongo checkout-hold/payment-intent flow, the
+   `paymongo-webhook` and `admin-refund-booking` edge functions, admin payment visibility
+   (`recordBalancePaid`/`recordPenalty`), and the receipt screen are all live and were exercised
+   end-to-end against the real dev account. Still open within Phase 5: Resend email receipts (no
+   Resend integration exists yet), and Task 14 Step 4 (the hold-conflict race test) was never run.
+   The deposit-rule and cancellation-policy decisions (Open Items #2 and #4) were never formally
+   answered by the shop — the code quietly encodes an answer anyway (self-cancel forfeits the
+   deposit, admin reject/cancel refunds it), which works but isn't a signed-off policy.
+2. **Booking → unit status transitions** (Phase 4) — **done**, `0022_unit_status_transitions.sql`.
+3. **Finish the Android pass.** The first Android run happened (Pixel 7 emulator) and Home is
    clean, but only the auth screens and Home have been seen there — the reserve flow, the admin
    area and returns have not, and nothing has run on a physical device. `DESIGN.md` states most of
    these customers are on mid-range Android, so this stays on the list until the booking flow has
    been walked end to end there. Note `adb shell input tap` drives Android reliably, unlike the
    synthetic-tap route on the iOS simulator.
-5. **Device verification of the admin screens and the payment stand-ins** — see the Phase 4 gaps.
-   The account in the simulator is a customer, so `AdminGate` bounces it; the `admins` table does
-   hold an owner account to sign in as. The reserve flow past the calendar is also unseen.
-6. **Decide whether Phase 7a (customer-arranged courier pickup) enters v1.** Field observation says
+4. **Device verification of the admin screens and the payment stand-ins** — largely covered for the
+   payment flow (the admin reject/refund action was driven live on the iOS simulator during Phase 5
+   QA), but only on iOS simulator, not Android or a physical device. The reserve flow past the
+   calendar is also still otherwise unseen outside Phase 5's own walkthrough.
+5. **Decide whether Phase 7a (customer-arranged courier pickup) enters v1.** Field observation says
    this is already how items leave the shop — the customer books a Lalamove, sometimes the night
    before — and the app has no value for it. It is small, and it touches the one thing the app is
    supposed to get right: who is holding the item, and from when. See Phase 7a and the Observed
    Workflow section of `project-scope.md`.
 
 **Environment:** the dev Supabase project (`rent-dev`, Postgres 17, ap-southeast-1) is live and
-seeded. **All migrations `0001`–`0017` are applied** — confirmed against `list_migrations`, which
-tracks `0010`–`0017`; `0001`–`0009` predate migration tracking but every table and function they
-create is present. `public` holds 11 tables: `admin_audit_log`, `admin_invite_codes`, `admins`,
-`announcements`, `bookings`, `categories`, `customers`, `home_slides`, `item_units`, `items`,
-`shop_settings`. **`payments` and `notifications` do not exist** — Phases 5 and 6 have no schema at
-all yet.
+seeded. **All migrations `0001`–`0022` are applied** — confirmed against `list_migrations`. `public`
+holds 13 tables: `admin_audit_log`, `admin_invite_codes`, `admins`, `announcements`, `bookings`,
+`categories`, `customers`, `home_slides`, `item_units`, `items`, `payment_events`, `payments`,
+`shop_settings`. **`notifications` does not exist** — Phase 6 has no schema yet.
 
-Live data is thin: 2 bookings, statuses `pending` and `approved` only. Nothing has ever reached
-`picked_up`, `returned` or `completed`, so the returns and pickup paths have never run against real
-rows. 0 `hold` rows, as expected. `pg_cron` is **not installed**, so `expire_stale_holds()` exists
-but is never scheduled.
+Live data now includes real Phase-5 QA traffic: bookings have reached `hold`, `pending`, `approved`,
+`cancelled`, and `completed`, with real `payments` rows in `processing`/`paid` status — these are
+exploratory test rows, not seed data, so don't treat them as representative. `pg_cron` is
+**installed and scheduled** (`expire-holds` every minute, `release-cleaned-units` daily).
 
 A Supabase MCP server is connected, so migrations can be applied and verified directly rather than
 pasted into the SQL editor by hand — and `get_advisors` run after each one.
@@ -278,11 +279,16 @@ Goal: customer can reserve an item for a date range or book a fitting; admin can
   confirm and cancel on the booking detail, plus the **day view at `(app)/admin/fittings.tsx`**
   (a horizontal week strip over time-stamped appointment rows, backed by one memoised day→rows map).
   **Rescheduling is still not built.**
-- [~] Booking transitions update item status correctly — **partly done.** Flagging condition during a
-  return sets `item_units.status = 'damaged'`, which removes that copy from the calendar. Nothing
-  else is driven by booking state: no unit moves through rented or cleaning, and the admin item
-  editor is otherwise the only writer. (Availability does not depend on this — the `blocked_range`
-  exclusion constraint does that work — so this is about the admin's inventory view, not correctness.)
+- [x] Booking transitions update item status correctly — `0022_unit_status_transitions.sql`. A
+      trigger on `bookings` syncs `item_units.status` on every status change (`approved` → `reserved`,
+      `picked_up` → `rented`, `completed` → `damaged`/`under_cleaning` depending on the return
+      condition, `cancelled`-from-`approved` → back to `available`), plus a daily pg_cron sweep that
+      releases a unit from `under_cleaning` once its snapshotted `cleaning_buffer_days` has elapsed.
+      Informational only — `pick_free_unit()` already excludes nothing but `damaged`/`unavailable`, so
+      this doesn't touch booking correctness, only the admin's inventory view. Verified with behavioural
+      SQL against the live DB (all six transitions plus the sweep's before/after-buffer behaviour);
+      `get_advisors` clean. `markReturned()` now collapses to one atomic update instead of three
+      separate client calls.
 - [~] Unit-test the availability + pricing math — no test runner exists, so the DB-level logic was
   verified with behavioural SQL instead (see "Where we left off"). The client-side pricing in
   `features/booking/pricing.ts` is still untested.
@@ -406,48 +412,65 @@ third needs the migration applied and the admin screen built._
 
 Goal: booking is only confirmed once the deposit is paid online.
 
-> **This is now a hard dependency, not an enhancement.** RLS deliberately gives the client no path to
-> mark its own deposit paid or to approve its own booking, so today a booking can only ever be created
-> as `pending` with nothing paid. The screens for this phase already exist as UI stand-ins — payment
-> method (with GCash / Maya / GrabPay / card rows), the three-stage processing screen, payment success
-> and booking confirmed — and the booking is created in the **processing** screen's completion
-> callback rather than on the success screen's render, precisely so the webhook can take that place
-> without the screens changing.
->
-> The `payments` table is where payment state belongs, and **it does not exist yet** (confirmed
-> against the live schema) — it is the first item of schema work in this phase. The next free
-> migration number is **`0018`**. Nothing in `bookings` should learn about money.
+> **Built and merged.** RLS deliberately gives the client no path to mark its own deposit paid or to
+> approve its own booking, so a booking only ever advances past `hold` via the PayMongo webhook —
+> that dependency is now closed. `payments` (`0019`) and its RLS exist; the webhook, the checkout
+> flow, and admin payment actions were exercised end-to-end against the real dev account during a
+> QA pass that found and fixed five real bugs beyond what code review alone caught (bad
+> `return_url` format, missing `Content-Type` on every payment edge function response, a broken
+> customer cancel path, an incorrect payment-status badge, an admin-refund crash on a PayMongo
+> error) — see `docs/superpowers/plans/2026-09-14-phase-5-payments.md` Task 14 for the detail.
 
-- [ ] Decide cancellation/refund policy (Open Item #4) — include refund mechanics + who absorbs gateway fees
-- [ ] **Confirm how the deposit amount is actually computed** (Open Item #2). The app ships a flat
-      per-item `items.deposit` because the schema needed a number; in the real flow the customer
-      sends a deposit and the rule behind the amount was never observed. If it scales with item
-      value, or is negotiated per customer, `items.deposit` is the wrong shape — and every money
-      block in the booking flow reads from it, so this is not a local change. Ask before wiring
-      PayMongo to an amount.
+- [ ] Decide cancellation/refund policy (Open Item #4) — **still not formally decided.** The code
+      quietly encodes an answer anyway: a customer self-cancel forfeits the deposit (DB trigger,
+      no refund), an admin reject/cancel refunds it (`admin-refund-booking`). Works, but was never
+      actually signed off as the shop's policy — worth confirming before launch.
+- [ ] **Confirm how the deposit amount is actually computed** (Open Item #2) — **still open.**
+      `items.deposit` is still a flat per-item number; every money block in the booking flow reads
+      from it, so this is not a local change if the real rule turns out to be different.
 - [ ] Note the **flow-order mismatch**: today the customer pays a deposit and _then_ picks dates. The
       app requires dates first, which is the safer order (you cannot hold a range you have not
       chosen) — but it means a customer arriving with the old habit will be asked for something they
       did not expect. Worth watching in the beta rather than redesigning around.
-- [ ] Set up PayMongo SDK in Expo app
-- [ ] Set up Supabase edge function for PayMongo webhook
-- [ ] **Webhook must verify PayMongo signature and be idempotent** (dedupe on event id — webhooks retry and can arrive out of order/twice; otherwise bookings double-advance and payments double-record)
-- [ ] Create `payments` table (booking_id, type, amount, paymongo_id, `status`: paid / balance_due / refunded / forfeited) + RLS (customer sees own, admin sees all) — next migration number is `0018`
-- [~] Build deposit payment screen (GCash, GrabPay, Maya, card) — screen built
-  (`reserve/payment.tsx`); the marks are coloured plates, so real brand assets are still needed,
-  and nothing is wired to PayMongo
-- [~] Handle PayMongo redirect/callback in app — `reserve/processing.tsx` stands in for it, with
-  the staged progress and the failure state already designed
-- [ ] Webhook: mark deposit as paid → confirm the slot hold → transition booking to "awaiting approval" (release/refund on hold-conflict, per Phase 4 slot-hold rule)
-- [ ] Build payment receipt screen + Resend email with receipt — there are two "View receipt"
-      buttons (`reserve/success.tsx`, `bookings/[id]/thanks.tsx`), now rendered **disabled** rather
-      than silently doing nothing on tap. Re-enable them here.
-- [ ] Build admin "record balance paid" action (in-shop balance)
-- [ ] Build admin **manual late-fee / penalty** entry (v1 records admin-entered amounts; automated formula is v2)
-- [ ] Build admin refund action (calls PayMongo refund API) + deposit-forfeit handling per cancellation policy
-- [ ] Integration-test the webhook (duplicate delivery, bad signature, hold-conflict paths)
+- [x] Set up PayMongo integration in the Expo app — no official PayMongo RN SDK exists, so this is a
+      custom REST wrapper: `src/lib/paymongo.ts` (client, public-key calls) and
+      `supabase/functions/_shared/paymongo.ts` (server, secret-key calls).
+- [x] Set up Supabase edge functions for PayMongo — `create-payment-intent`, `paymongo-webhook`,
+      `admin-refund-booking`, plus `paymongo-return` (an https bridge PayMongo's `return_url`
+      requires, added during Task 14 QA — see below).
+- [x] **Webhook verifies PayMongo's signature and is idempotent** — `verifyWebhookSignature()`
+      (HMAC over `t.rawBody`, checked against both `te`/`li` mode signatures), dedupe via a unique
+      insert into `payment_events` keyed on the PayMongo event id.
+- [x] Create `payments` table + RLS — `0019_payments.sql` (`type`: deposit/balance/penalty,
+      `status`: processing/paid/failed/refunded/forfeited; customer sees own, admin sees all).
+- [x] Build deposit payment screen (GCash, GrabPay, Maya, card) — `reserve/payment.tsx`, wired to
+      PayMongo and verified with a real test-mode payment. The marks are still coloured plates, not
+      real brand assets.
+- [x] Handle PayMongo redirect/callback in app — `reserve/processing.tsx`, plus the `paymongo-return`
+      bridge function that PayMongo's `return_url` requires (a raw `renta://` scheme is rejected;
+      this serves the required `https://` URL and 302s into the app's own deep link).
+- [x] Webhook: mark deposit as paid → confirm the slot hold → transition booking to `pending` —
+      verified against a real payment: booking went `hold` → `pending`, `hold_expires_at` cleared,
+      `payments.status` → `paid` with a real `paymongo_payment_id`.
+- [~] Build payment receipt screen + Resend email with receipt — receipt screen built
+  (`bookings/[id]/receipt.tsx`) and both "View receipt" buttons re-enabled. **Resend email is
+  not built** — no Resend integration exists in the repo yet.
+- [x] Build admin "record balance paid" action (in-shop balance) — `recordBalancePaid()`.
+- [x] Build admin **manual late-fee / penalty** entry — `recordPenalty()`.
+- [x] Build admin refund action (calls PayMongo refund API) + deposit-forfeit handling —
+      `admin-refund-booking` calls PayMongo's refund endpoint and now cleanly surfaces a failure
+      instead of crashing; forfeiture on customer self-cancel is a DB trigger
+      (`forfeit_deposit_on_customer_cancel`, `0019`). The refund call itself was verified correct
+      end-to-end (auth, lookup, request, error handling) but a real refund's success was not
+      confirmed — the dev PayMongo test account returned `available_balance_insufficient`, an
+      account-funding limitation, not a code defect.
+- [~] Integration-test the webhook (duplicate delivery, bad signature, hold-conflict paths) —
+  duplicate delivery and bad-signature handling are implemented and were verified against the
+  real function during initial build (curl, per the plan's own Task 4). **The hold-conflict race
+  (Task 14 Step 4) was never run** — needs a live session to time deleting a `hold` row against
+  an in-flight payment.
 
-**Done when:** a customer pays a deposit online, the booking advances exactly once even on duplicate webhooks, and an emailed receipt arrives.
+**Done when:** a customer pays a deposit online, the booking advances exactly once even on duplicate webhooks, and an emailed receipt arrives. _First two hold, verified against a real payment. The emailed receipt does not — no Resend integration exists yet._
 
 ---
 
