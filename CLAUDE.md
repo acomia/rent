@@ -146,7 +146,7 @@ what the code assumes, so check here before designing anything in this area:
   the booking flow reads from it, so a change of shape there is not local. Don't
   build a deposit formula until that decision exists.
 
-**Database** (`src/db/*.sql`): numbered, ordered migrations through `0018`,
+**Database** (`src/db/*.sql`): numbered, ordered migrations through `0023`,
 applied by hand via the Supabase SQL editor (or `supabase db push`) — there is
 no migration runner in this repo. When adding a schema change, add the
 next-numbered `NNNN_*.sql` file rather than editing a past one. Every table has
