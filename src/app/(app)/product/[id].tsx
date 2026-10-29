@@ -194,22 +194,29 @@ export default function ProductDetail() {
           ))}
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push('/(app)/size-guide')}
-          className="flex-row items-center gap-3 rounded-2xl border-hairline bg-surface p-4 active:opacity-80"
-        >
-          <Feather name="maximize-2" size={17} color={INK} />
-          <View className="flex-1">
-            <Text className="font-sans-medium text-base text-ink">
-              Size guide
-            </Text>
-            <Text className="font-sans text-xs text-muted">
-              Measurements, and how alterations work
-            </Text>
-          </View>
-          <Feather name="chevron-right" size={18} color={MUTED} />
-        </Pressable>
+        {product.sizes.length > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() =>
+              router.push({
+                pathname: '/(app)/size-guide',
+                params: { category: product.category, gender: product.gender },
+              })
+            }
+            className="flex-row items-center gap-3 rounded-2xl border-hairline bg-surface p-4 active:opacity-80"
+          >
+            <Feather name="maximize-2" size={17} color={INK} />
+            <View className="flex-1">
+              <Text className="font-sans-medium text-base text-ink">
+                Size guide
+              </Text>
+              <Text className="font-sans text-xs text-muted">
+                Measurements, and how alterations work
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={MUTED} />
+          </Pressable>
+        ) : null}
 
         <SimilarItems item={product} />
       </ScrollView>

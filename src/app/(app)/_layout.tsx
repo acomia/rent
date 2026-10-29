@@ -11,6 +11,7 @@ export default function AppLayout() {
         <Stack.Screen name="product/[id]" />
         <Stack.Screen name="search" />
         <Stack.Screen name="categories" />
+        <Stack.Screen name="items" />
         <Stack.Screen name="size-guide" />
         {/*
           The real routes — there is no `profile.tsx`. `name="profile"` used to
