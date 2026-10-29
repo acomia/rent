@@ -12,7 +12,11 @@ export type Gender = 'women' | 'men';
 
 export type Tint = 'lilac' | 'sky' | 'blush' | 'butter';
 
-export type CategorySlug = 'gowns' | 'costumes' | 'shoes' | 'accessories';
+/**
+ * Categories are admin-managed rows (`categories.slug`), not a fixed set — the
+ * shop can add one at any time, so the type is open rather than a union.
+ */
+export type CategorySlug = string;
 
 export type Occasion = 'wedding' | 'debut' | 'formal' | 'cosplay' | 'school';
 
