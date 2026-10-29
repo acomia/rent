@@ -23,7 +23,7 @@ import {
   CatalogError,
   CatalogLoading,
 } from '@/components/catalog/states';
-import { useItems } from '@/features/catalog/hooks';
+import { useCategories, useItems } from '@/features/catalog/hooks';
 import type { CategorySlug, Gender, Item } from '@/features/catalog/types';
 
 function chunkPairs(items: Item[]): Item[][] {
@@ -50,9 +50,11 @@ export default function CategoryListing() {
   }>();
 
   const categorySlug = (slug ?? 'gowns') as CategorySlug;
+  const categories = useCategories();
   const category = useMemo(
-    () => CATEGORY_NAMES[categorySlug] ?? 'Catalog',
-    [categorySlug],
+    () =>
+      categories.data?.find((c) => c.slug === categorySlug)?.name ?? 'Catalog',
+    [categories.data, categorySlug],
   );
 
   // 'high' → priced high-to-low; toggled by the Price pill.
@@ -169,10 +171,3 @@ export default function CategoryListing() {
     </ScrollView>
   );
 }
-
-const CATEGORY_NAMES: Record<CategorySlug, string> = {
-  gowns: 'Gowns',
-  costumes: 'Costumes',
-  shoes: 'Shoes',
-  accessories: 'Accessories',
-};

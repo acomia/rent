@@ -18,19 +18,39 @@ import { ProductCard } from '@/components/catalog/product-card';
 import { SearchBar } from '@/components/catalog/search-bar';
 import { CatalogError, CatalogLoading } from '@/components/catalog/states';
 import { Button } from '@/components/ui/button';
+import { QuickActionsSheet } from '@/components/home/quick-actions-sheet';
 import { useCategories, useItems } from '@/features/catalog/hooks';
+import type { Category } from '@/features/catalog/types';
 
 /** How many pieces the Featured strip shows. */
 const FEATURED = 4;
+/** How many categories the quick-row shows before folding the rest into "See all". */
+const VISIBLE_CATEGORIES = 4;
 
 export default function Browse() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [categorySheetOpen, setCategorySheetOpen] = useState(false);
 
   const categories = useCategories();
   const items = useItems();
+
+  function coverFor(c: Category): string | null {
+    return (
+      (items.data ?? []).find((i) => i.category === c.slug && i.photos[0])
+        ?.photos[0] ?? null
+    );
+  }
+
+  function goToCategory(c: Category) {
+    setCategorySheetOpen(false);
+    router.push({
+      pathname: '/(app)/category/[slug]',
+      params: { slug: c.slug },
+    });
+  }
 
   function submitSearch() {
     const q = query.trim();
@@ -100,10 +120,12 @@ export default function Browse() {
           </View>
         </Pressable>
 
-        {/* Category quick-row — the same four categories as the grid, one tap away. */}
+        {/* Category quick-row — the first four categories, one tap away, plus a
+            "See all" tile that opens the full picker (same sheet Home's "Find a
+            look" uses) so the row never crowds past a comfortable four. */}
         {categories.data ? (
           <View className="flex-row justify-between">
-            {categories.data.map((c) => (
+            {categories.data.slice(0, VISIBLE_CATEGORIES).map((c) => (
               <Pressable
                 key={c.slug}
                 accessibilityRole="button"
@@ -124,6 +146,21 @@ export default function Browse() {
                 </Text>
               </Pressable>
             ))}
+            {categories.data.length > VISIBLE_CATEGORIES ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="See all categories"
+                onPress={() => setCategorySheetOpen(true)}
+                className="flex-1 items-center gap-2 active:opacity-70"
+              >
+                <View className="h-14 w-14 items-center justify-center rounded-2xl border-hairline bg-surface">
+                  <Feather name="grid" size={22} color={MUTED} />
+                </View>
+                <Text className="font-sans-medium text-xs text-ink">
+                  See all
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
 
@@ -134,7 +171,7 @@ export default function Browse() {
             </Text>
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.push('/(app)/categories')}
+              onPress={() => router.push('/(app)/items')}
               hitSlop={8}
               className="flex-row items-center gap-1 active:opacity-70"
             >
@@ -174,6 +211,14 @@ export default function Browse() {
           )}
         </View>
       </ScrollView>
+
+      <QuickActionsSheet
+        visible={categorySheetOpen}
+        categories={categories.data ?? []}
+        coverFor={coverFor}
+        onSelect={goToCategory}
+        onClose={() => setCategorySheetOpen(false)}
+      />
     </View>
   );
 }

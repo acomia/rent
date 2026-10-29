@@ -3,10 +3,17 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
-import { OCCASIONS, type Occasion } from '@/features/catalog/types';
+import type {
+  Category,
+  CategorySlug,
+  Occasion,
+} from '@/features/catalog/types';
+import { OCCASIONS } from '@/features/catalog/types';
 
-/** The subset of filters the sheet controls (category + gender live in the header). */
+/** The subset of filters the sheet controls (gender lives in the header). */
 export type SheetFilters = {
+  /** Only set on screens that pass a `categories` list — null elsewhere. */
+  category: CategorySlug | null;
   occasion: Occasion | null;
   size: string | null;
   minPrice: number | null;
@@ -14,6 +21,7 @@ export type SheetFilters = {
 };
 
 export const EMPTY_SHEET_FILTERS: SheetFilters = {
+  category: null,
   occasion: null,
   size: null,
   minPrice: null,
@@ -95,6 +103,8 @@ export function FilterSheet(props: {
   visible: boolean;
   value: SheetFilters;
   sizes: string[];
+  /** When given, a "Category" section is shown (the all-items listing passes this; a single-category listing omits it). */
+  categories?: Category[];
   onApply: (next: SheetFilters) => void;
   onClose: () => void;
 }) {
@@ -119,11 +129,13 @@ export function FilterSheet(props: {
 function SheetBody({
   value,
   sizes,
+  categories,
   onApply,
   onClose,
 }: {
   value: SheetFilters;
   sizes: string[];
+  categories?: Category[];
   onApply: (next: SheetFilters) => void;
   onClose: () => void;
 }) {
@@ -160,6 +172,29 @@ function SheetBody({
         contentContainerClassName="gap-6"
         className="max-h-[60vh]"
       >
+        {categories && categories.length > 0 ? (
+          <Section title="Category">
+            <Chip
+              label="All"
+              active={draft.category === null}
+              onPress={() => setDraft((d) => ({ ...d, category: null }))}
+            />
+            {categories.map((c) => (
+              <Chip
+                key={c.slug}
+                label={c.name}
+                active={draft.category === c.slug}
+                onPress={() =>
+                  setDraft((d) => ({
+                    ...d,
+                    category: d.category === c.slug ? null : c.slug,
+                  }))
+                }
+              />
+            ))}
+          </Section>
+        ) : null}
+
         <Section title="Occasion">
           <Chip
             label="All"
