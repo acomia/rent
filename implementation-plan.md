@@ -68,9 +68,20 @@ dump` for exact element bounds drives Android reliably, unlike synthetic taps on
    before — and the app has no value for it. It is small, and it touches the one thing the app is
    supposed to get right: who is holding the item, and from when. See Phase 7a and the Observed
    Workflow section of `project-scope.md`.
+6. **Catalog browsing pass — merged (PR #3).** An all-items listing behind Browse's "See all", a
+   category filter in the sheet, a four-tile category quick-row with a "See all" picker, and a size
+   guide that takes the product's category and gender (separate shoe chart). `CategorySlug` is now
+   an open `string`, because categories are admin-managed rows; the offline mock and
+   `0023_seed_filipiniana_barong_categories.sql` bring the Filipiniana and Barong & Menswear
+   categories the dev project already had to fresh environments. **None of it has been seen on a
+   device yet.**
+7. **Admin fitting reschedule — built** (`admin/fitting/[ref].tsx`), closing the last gap in the
+   Phase 4 fitting tasks. See Phase 4.
 
 **Environment:** the dev Supabase project (`rent-dev`, Postgres 17, ap-southeast-1) is live and
-seeded. **All migrations `0001`–`0022` are applied** — confirmed against `list_migrations`. `public`
+seeded. **All migrations `0001`–`0022` are applied** — confirmed against `list_migrations`. `0023` is
+not applied, and dev does not need it: it seeds categories dev already has, and it was tested as a
+no-op against a dev-like database. `public`
 holds 13 tables: `admin_audit_log`, `admin_invite_codes`, `admins`, `announcements`, `bookings`,
 `categories`, `customers`, `home_slides`, `item_units`, `items`, `payment_events`, `payments`,
 `shop_settings`. **`notifications` does not exist** — Phase 6 has no schema yet.
@@ -281,9 +292,9 @@ Goal: customer can reserve an item for a date range or book a fitting; admin can
 - [x] Build calendar UI on item details — `components/booking/month-calendar.tsx`, driven by
       `item_day_states`, with a permanent legend
 - [x] Build booking form (pickup, return, fulfillment) — `reserve/dates` → `range` → `fulfillment`
-- [~] Build fitting-appointment flow — customer side done (`reserve/fitting`, a visibly different
-  object from the rental calendar, and `fitting_at` is excluded from `blocked_range` so it never
-  holds the dates). **Admin confirm / reschedule / cancel is NOT built.**
+- [x] Build fitting-appointment flow — customer side done (`reserve/fitting`, a visibly different
+      object from the rental calendar, and `fitting_at` is excluded from `blocked_range` so it never
+      holds the dates). Admin confirm / cancel / reschedule are built — see the next task.
 - [x] Build booking summary screen — `reserve/summary`, with the fixed four-row money block
 - [x] Build booking status screen — `bookings/[id]`
 - [x] Build customer's "My Bookings" list — `(tabs)/bookings.tsx`, grouped by what needs attention
@@ -296,10 +307,18 @@ Goal: customer can reserve an item for a date range or book a fitting; admin can
       — `customers` had only a select-own policy, so the admin could read a booking but not the name
       of the person who made it. Verified as the admin: approve, reject-with-reason, a rejected
       booking releasing its dates, and both transitions landing in the audit log.
-- [~] Build admin's "Fitting Appointments" calendar (view / confirm / reschedule / cancel) —
-  confirm and cancel on the booking detail, plus the **day view at `(app)/admin/fittings.tsx`**
-  (a horizontal week strip over time-stamped appointment rows, backed by one memoised day→rows map).
-  **Rescheduling is still not built.**
+- [x] Build admin's "Fitting Appointments" calendar (view / confirm / reschedule / cancel) —
+      confirm and cancel on the booking detail, the **day view at `(app)/admin/fittings.tsx`**
+      (a horizontal week strip over time-stamped appointment rows, backed by one memoised day→rows
+      map), and **reschedule at `(app)/admin/fitting/[ref].tsx`**, reached from the booking detail
+      while the booking is `pending` or `approved`. It reuses the customer's slots (now shared from
+      `features/booking/dates.ts`), drops the two-day lead time because the shop is the one
+      choosing, and saves the new time as `confirmed`. **Not seen on a device.** Cancel is still
+      offered only on a `requested` fitting, not a confirmed one.
+      **Known gap — fitting times are device-local, not Manila.** `fittingSlotToIso` and `formatTime`
+      both use the device clock, so they agree with each other, but a device outside Manila time
+      would book and show a different instant than the shop means. Fixing it touches every screen that
+      shows a fitting time, so it is called out rather than folded in.
 - [x] Booking transitions update item status correctly — `0022_unit_status_transitions.sql`. A
       trigger on `bookings` syncs `item_units.status` on every status change (`approved` → `reserved`,
       `picked_up` → `rented`, `completed` → `damaged`/`under_cleaning` depending on the return
@@ -596,8 +615,7 @@ Goal: the admin has a single screen showing what needs attention today.
 - [ ] Build customer management screen (search + view rental history)
 - [x] Build return management flow (mark returned → balance settled → item to "under cleaning" or
       "available") — `(app)/admin/returns.tsx` + `return/[ref].tsx`, in three steps. Flagging
-      condition marks the unit damaged. **Caveat:** `markReturned` is three non-atomic client calls
-      and wants one DB function.
+      condition marks the unit damaged. `markReturned` is now one atomic update (`0022`).
 - [ ] Build payment tracking screen (list of all payments, filterable) — needs the `payments` table (Phase 5)
 - [ ] Build audit log viewer (admin actions) — the table and its triggers exist (`0007`); no viewer
 - [~] Build rental history screen for customers (past + current) — the Bookings tab has Upcoming and
