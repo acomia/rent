@@ -312,6 +312,24 @@ export async function updateFittingStatus(input: {
 }
 
 /**
+ * Moves a fitting to a new time. The shop sets the time itself — normally after
+ * agreeing it with the customer — so the fitting lands as `confirmed`, not back
+ * at `requested`. `fitting_at` is outside `blocked_range`, so this never touches
+ * the rental dates or the exclusion constraint.
+ */
+export async function rescheduleFitting(input: {
+  reference: string;
+  fittingAt: string;
+}): Promise<void> {
+  const db = requireDb();
+  const { error } = await db
+    .from('bookings')
+    .update({ fitting_at: input.fittingAt, fitting_status: 'confirmed' })
+    .eq('reference', input.reference);
+  if (error) throw error;
+}
+
+/**
  * What each worklist means — one definition, used by the dashboard, the booking
  * queue and the returns list.
  *

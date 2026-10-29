@@ -86,6 +86,12 @@ export default function AdminBookingDetail() {
   const showRecordBalance = owesBalance(booking) && !booking.balancePaid;
   const showAddPenalty = owesBalance(booking) || isOut(booking);
   const anyPanelOpen = rejecting || recordingBalance || recordingPenalty;
+  // A fitting happens before the item leaves the shop, so it can only move
+  // while the booking is waiting on pickup — and not during a `hold`, when the
+  // customer is still mid-checkout.
+  const canReschedule =
+    booking.fittingStatus !== 'cancelled' &&
+    (booking.status === 'pending' || booking.status === 'approved');
 
   const parsedBalance = Number(balanceAmount);
   const balanceValid =
@@ -320,6 +326,18 @@ export default function AdminBookingDetail() {
                   />
                 </View>
               </View>
+            ) : null}
+            {canReschedule ? (
+              <Button
+                label="Reschedule fitting"
+                variant="outline"
+                onPress={() =>
+                  router.push({
+                    pathname: '/(app)/admin/fitting/[ref]',
+                    params: { ref: booking.ref },
+                  })
+                }
+              />
             ) : null}
           </View>
         ) : null}

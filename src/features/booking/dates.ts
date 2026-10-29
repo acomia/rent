@@ -128,6 +128,30 @@ export function todayManila(): Date {
  */
 export const FITTING_BUFFER_DAYS = 2;
 
+/** The shop's fitting times. Shared by the customer picker and the admin reschedule. */
+export const FITTING_SLOTS = [
+  '10:00 AM',
+  '11:30 AM',
+  '1:00 PM',
+  '2:30 PM',
+  '4:00 PM',
+];
+
+/**
+ * A calendar day plus a slot label → the `fitting_at` instant. Built in device
+ * local time, which is also how `formatTime` reads it back — consistent on a
+ * device set to Manila, but not yet Manila-anchored.
+ */
+export function fittingSlotToIso(day: Date, slot: string): string {
+  const [time, suffix] = slot.split(' ');
+  const [h, m] = time.split(':').map(Number);
+  const hour =
+    suffix === 'PM' && h !== 12 ? h + 12 : h === 12 && suffix === 'AM' ? 0 : h;
+  const d = new Date(day);
+  d.setHours(hour, m, 0, 0);
+  return d.toISOString();
+}
+
 /**
  * The days a returned item is out of circulation. Blocked, but not booked —
  * the distinction the rental band draws, and the window the return flow shows.
