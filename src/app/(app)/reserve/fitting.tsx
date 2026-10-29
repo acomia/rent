@@ -12,22 +12,12 @@ import { useBooking } from '@/features/booking/booking-context';
 import {
   daysBetween,
   FITTING_BUFFER_DAYS,
+  FITTING_SLOTS as SLOTS,
+  fittingSlotToIso as toIso,
   fromKey,
   monthMatrix,
   toKey,
 } from '@/features/booking/dates';
-
-const SLOTS = ['10:00 AM', '11:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'];
-
-function toIso(day: Date, slot: string): string {
-  const [time, suffix] = slot.split(' ');
-  const [h, m] = time.split(':').map(Number);
-  const hour =
-    suffix === 'PM' && h !== 12 ? h + 12 : h === 12 && suffix === 'AM' ? 0 : h;
-  const d = new Date(day);
-  d.setHours(hour, m, 0, 0);
-  return d.toISOString();
-}
 
 /**
  * Screen 11 — the fitting calendar.

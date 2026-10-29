@@ -19,6 +19,7 @@ import {
   markReturned,
   recordBalancePaid,
   recordPenalty,
+  rescheduleFitting,
   updateBookingStatus,
   updateFittingStatus,
 } from './bookings-api';
@@ -73,6 +74,14 @@ export function useUpdateFittingStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: updateFittingStatus,
+    onSuccess: () => invalidateBookings(qc),
+  });
+}
+
+export function useRescheduleFitting() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: rescheduleFitting,
     onSuccess: () => invalidateBookings(qc),
   });
 }
